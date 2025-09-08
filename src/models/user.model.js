@@ -7,7 +7,7 @@ class UserModel extends BaseModel {
     super('users');
   }
 
-  async create({ login, password, full_name, email, profile_picture, role = 'user' }) {
+  async create({ login, password, full_name, email, profile_picture = null, role = 'user' }) {
     const [result] = await db.execute(USER_QUERIES.CREATE, [
       login,
       password,
