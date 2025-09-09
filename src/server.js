@@ -5,11 +5,13 @@ import { errorHandler } from '#src/middlewares/error.middleware.js';
 const app = express();
 const port = 3000;
 
+app.use(express.json());
+
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.use('/', mainRouter);
+app.use('/api', mainRouter);
 
 app.use(errorHandler);
 

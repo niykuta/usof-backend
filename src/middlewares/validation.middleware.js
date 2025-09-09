@@ -7,7 +7,11 @@ function validate(schema) {
       req.validatedBody = schema.parse(req.body);
       next();
     } catch (err) {
-      next(new ValidationError(err.errors.map(e => e.message).join(', ')));
+      if (err.issues) {
+        next(new ValidationError(err.issues.map(e => e.message)));
+      } else {
+        next(err);
+      }
     }
   };
 }
