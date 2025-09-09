@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node src/server.js"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js"
   },
   "private": true,
   "dependencies": {
@@ -17,5 +18,8 @@
     "express": "^5.1.0",
     "mysql2": "^3.14.4",
     "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

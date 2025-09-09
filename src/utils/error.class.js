@@ -29,6 +29,12 @@ export class NotFoundError extends BaseError {
   }
 }
 
+export class ConflictError extends BaseError {
+  constructor(message = 'Conflict') {
+    super(message, 409);
+  }
+}
+
 export class ServerError extends BaseError {
   constructor(message = 'Internal server error') {
     super(message, 500);
