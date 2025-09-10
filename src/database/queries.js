@@ -13,3 +13,12 @@ export const USER_QUERIES = {
   FIND_BY_EMAIL: `SELECT * FROM users WHERE email = ?`,
   DELETE: `DELETE FROM users WHERE id = ?`,
 };
+
+export const SESSION_QUERIES = {
+  CREATE: `
+    INSERT INTO sessions (user_id, refresh_token, expires_at)
+    VALUES (?, ?, ?)
+  `,
+  FIND_BY_TOKEN: `SELECT * FROM sessions WHERE refresh_token = ?`,
+  DELETE_BY_USER: `DELETE FROM sessions WHERE user_id = ?`
+}
