@@ -1,7 +1,7 @@
 import express from 'express';
 import { mainRouter } from '#src/routes/main.router.js';
 import { errorHandler } from '#src/middlewares/error.middleware.js';
-''
+
 const app = express();
 const port = 3000;
 

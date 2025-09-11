@@ -19,6 +19,11 @@ export const SESSION_QUERIES = {
     INSERT INTO sessions (user_id, refresh_token, expires_at)
     VALUES (?, ?, ?)
   `,
-  FIND_BY_TOKEN: `SELECT * FROM sessions WHERE refresh_token = ?`,
+  UPDATE: `
+    UPDATE sessions
+    SET refresh_token = ?, expires_at = ? 
+    WHERE user_id = ?
+  `,
+  FIND_BY_USER: `SELECT * FROM sessions WHERE user_id = ?`,
   DELETE_BY_USER: `DELETE FROM sessions WHERE user_id = ?`
-}
+};
