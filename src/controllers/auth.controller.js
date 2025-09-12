@@ -1,8 +1,11 @@
 import bcrypt from "bcrypt";
 import SessionModel from "#src/models/sessions.model.js";
 import UserModel from "#src/models/user.model.js";
-import { AuthError, ConflictError } from "#src/utils/error.class.js";
+import ResetModel from "#src/models/reset.model.js";
+import { AuthError, ConflictError, ValidationError } from "#src/utils/error.class.js";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "#src/utils/jwt.utils.js";
+import { generateResetToken, hashResetToken } from "#src/utils/token.utils.js";
+import { sendPasswordResetEmail } from "#src/utils/email.utils.js";
 
 export async function register(req, res) {
   const { login, password, full_name, email } = req.body;
@@ -91,5 +94,49 @@ export async function logout(req, res) {
 
   res.status(200).json({
     message: "Logout successful"
+  });
+}
+
+export async function reset(req, res) {
+  const { email } = req.body;
+  if (!email) throw new ValidationError("Email is required");
+
+  const user = await UserModel.findByEmail(email);
+  if (!user) throw new ValidationError("User with this email does not exist");
+
+  const { token, tokenHash } = generateResetToken();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  await ResetModel.deleteByUser(user.id);
+  await ResetModel.create({ user_id: user.id, token: tokenHash, expires_at: expiresAt });
+
+  await sendPasswordResetEmail(user.email, token);
+
+  res.status(200).json({
+    message: "Password reset email sent",
+  });
+}
+
+export async function confirm(req, res) {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  const tokenHash = hashResetToken(token);
+  const resetEntry = await ResetModel.findByToken(tokenHash);
+
+  if (!resetEntry) throw new AuthError("Invalid or expired token");
+
+  if (new Date(resetEntry.expires_at) < new Date()) {
+    await ResetModel.delete(resetEntry.id);
+    throw new AuthError("Token expired");
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+  await UserModel.update(resetEntry.user_id, { password: hashedPassword });
+
+  await ResetModel.delete(resetEntry.id);
+
+  res.status(200).json({
+    message: "Password reset successful",
   });
 }

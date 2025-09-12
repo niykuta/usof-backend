@@ -1,5 +1,5 @@
-import mysql from 'mysql2/promise';
-import config from '#src/config/database.config.json' with { type: 'json' };
+import mysql from "mysql2/promise";
+import config from "#src/config/database.config.js";
 
 const pool = mysql.createPool(config);
 

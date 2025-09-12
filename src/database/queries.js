@@ -27,3 +27,12 @@ export const SESSION_QUERIES = {
   FIND_BY_USER: `SELECT * FROM sessions WHERE user_id = ?`,
   DELETE_BY_USER: `DELETE FROM sessions WHERE user_id = ?`
 };
+
+export const PASSWORD_RESET_QUERIES = {
+  CREATE: `
+    INSERT INTO password_resets (user_id, token, expires_at)
+    VALUES (?, ?, ?)
+  `,
+  FIND_BY_TOKEN: `SELECT * FROM password_resets WHERE token = ?`,
+  DELETE_BY_USER: `DELETE FROM password_resets WHERE user_id = ?`
+};
