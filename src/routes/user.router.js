@@ -1,4 +1,5 @@
 import express from 'express';
+import { avatar, create, get, list, remove, update } from "#src/controllers/user.controller.js";
 
 const userRouter = express.Router();
 
