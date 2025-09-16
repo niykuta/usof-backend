@@ -1,21 +1,24 @@
 import express from 'express';
+import { create, get, list, remove, update } from "#src/controllers/post.controller.js";
+import { requireAuth } from "#src/middlewares/auth.middleware.js";
 
 const postRouter = express.Router();
 
-postRouter.get('/', list);
-postRouter.get('/:post_id', get);
-postRouter.get('/:post_id/comments', comments);
+postRouter.get("/", list);
+postRouter.get("/:id", get);
+// postRouter.get('/:post_id/comments', comments);
 
-postRouter.post('/:post_id/comments', addComment);
-postRouter.get('/:post_id/categories', categories);
-postRouter.get('/:post_id/like', likes);
+// postRouter.post('/:post_id/comments', addComment);
+// postRouter.get('/:post_id/categories', categories);
+// postRouter.get('/:post_id/like', likes);
 
-postRouter.post('/', create);
-postRouter.post('/:post_id/like', addLike);
+postRouter.post("/", requireAuth, create);
+// postRouter.post('/:post_id/like', addLike);
 
-postRouter.patch('/:post_id', update);
+postRouter.patch("/:id", requireAuth, update);
 
-postRouter.delete('/:post_id', remove);
-postRouter.delete('/:post_id/like', removeLike);
+postRouter.delete("/:id", requireAuth, remove);
+// postRouter.delete('/:post_id/like', removeLike);
+
 
 export { postRouter };

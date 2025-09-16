@@ -11,7 +11,6 @@ export const USER_QUERIES = {
   FIND_BY_ID: `SELECT * FROM users WHERE id = ?`,
   FIND_BY_LOGIN: `SELECT * FROM users WHERE login = ?`,
   FIND_BY_EMAIL: `SELECT * FROM users WHERE email = ?`,
-  DELETE: `DELETE FROM users WHERE id = ?`,
 };
 
 export const SESSION_QUERIES = {
@@ -20,7 +19,7 @@ export const SESSION_QUERIES = {
     VALUES (?, ?, ?)
   `,
   UPDATE: `
-    UPDATE sessions
+    UPDATE session
     SET refresh_token = ?, expires_at = ? 
     WHERE user_id = ?
   `,
@@ -35,4 +34,16 @@ export const PASSWORD_RESET_QUERIES = {
   `,
   FIND_BY_TOKEN: `SELECT * FROM password_resets WHERE token = ?`,
   DELETE_BY_USER: `DELETE FROM password_resets WHERE user_id = ?`
+};
+
+export const POST_QUERIES = {
+  CREATE: `
+    INSERT INTO posts (user_id, title, content, status)
+    VALUES (?, ?, ?, ?)
+  `,
+  UPDATE: `
+    UPDATE posts
+    SET title = ?, content = ?, status = ?
+    WHERE id = ?
+  `,
 };
