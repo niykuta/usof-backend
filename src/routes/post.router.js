@@ -20,5 +20,4 @@ postRouter.patch("/:id", requireAuth, update);
 postRouter.delete("/:id", requireAuth, remove);
 // postRouter.delete('/:post_id/like', removeLike);
 
-
 export { postRouter };

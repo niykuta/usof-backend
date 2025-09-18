@@ -5,14 +5,14 @@ import { ForbiddenError, ValidationError } from "#src/utils/error.class.js";
 export async function list(req, res) {
   const users = await UserModel.findAll();
 
-  res.status(200).json(users.map(sanitizeUser));
+  res.json(users.map(sanitizeUser));
 }
 
 export async function get(req, res) {
   const user = await UserModel.find(req.params.user_id);
   if (!user) throw new ValidationError("User not found");
 
-  res.status(200).json(sanitizeUser(user));
+  res.json(sanitizeUser(user));
 }
 
 export async function create(req, res) {

@@ -1,4 +1,5 @@
 import express from 'express';
+import { list, get, create, update, remove, posts } from "#src/controllers/category.controller.js";
 
 const categoryRouter = express.Router();
 

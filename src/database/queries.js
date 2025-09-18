@@ -47,3 +47,43 @@ export const POST_QUERIES = {
     WHERE id = ?
   `,
 };
+
+export const CATEGORY_QUERIES = {
+  CREATE: `
+    INSERT INTO categories (title, description)
+    VALUES (?, ?)
+  `,
+  UPDATE: `
+    UPDATE categories
+    SET title = ?, description = ?
+    WHERE id = ?
+  `,
+};
+
+export const POST_CATEGORY_QUERIES = {
+  ADD: `
+    INSERT INTO post_categories (post_id, category_id)
+    VALUES (?, ?)
+  `,
+  REMOVE: `
+    DELETE FROM post_categories
+    WHERE post_id = ? AND category_id = ?
+  `,
+  DELETE_BY_POST: `
+    DELETE FROM post_categories
+    WHERE post_id = ?
+  `,
+  FIND_BY_POST: `
+    SELECT categories.*
+    FROM categories
+    JOIN post_categories ON categories.id = post_categories.category_id
+    WHERE post_categories.post_id = ?
+  `,
+  FIND_POSTS_BY_CATEGORY: `
+    SELECT posts.* 
+    FROM posts
+    JOIN post_categories ON posts.id = post_categories.post_id
+    WHERE post_categories.category_id = ?
+  `
+};
+
