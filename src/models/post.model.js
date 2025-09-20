@@ -1,25 +1,59 @@
 import BaseModel from "#src/models/base.model.js";
 import db from "#src/database/pool.js";
 import { POST_QUERIES } from "#src/database/queries.js";
+import CategoryModel from "#src/models/category.model.js";
 
 class PostModel extends BaseModel {
   constructor() {
     super("posts");
   }
 
-  async create({ user_id, title, content, status = "active" }) {
+  async create({ user_id, title, content, status = "active", categories = [] }) {
     const [result] = await db.execute(POST_QUERIES.CREATE, [
       user_id,
       title,
       content,
-      status
+      status,
     ]);
-    return this.find(result.insertId);
+    const postId = result.insertId;
+
+    for (const categoryId of categories) {
+      await CategoryModel.addToPost(postId, categoryId);
+    }
+
+    return this.findWithCategories(postId);
   }
 
-  async update(id, { title, content, status }) {
+  async update(id, { title, content, status, categories }) {
     await db.execute(POST_QUERIES.UPDATE, [title, content, status, id]);
-    return this.find(id);
+
+    if (categories) {
+      await CategoryModel.deleteByPost(id);
+      for (const categoryId of categories) {
+        await CategoryModel.addToPost(id, categoryId);
+      }
+    }
+
+    return this.findWithCategories(id);
+  }
+
+  async findWithCategories(id) {
+    const post = await super.find(id);
+    if (!post) return null;
+
+    post.categories = await CategoryModel.findByPost(id);
+    return post;
+  }
+
+  async findAllWithCategories() {
+    const posts = await super.findAll();
+
+    return Promise.all(
+      posts.map(async (post) => {
+        post.categories = await CategoryModel.findByPost(post.id);
+        return post;
+      })
+    );
   }
 }
 

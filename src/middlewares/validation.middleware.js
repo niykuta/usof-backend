@@ -28,5 +28,21 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+export const postCreateSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  content: z.string().min(10, "Content must be at least 10 characters"),
+  status: z.enum(["active", "inactive"]).default("active"),
+  categories: z.array(z.number().int()).min(1, "At least one category is required")
+});
+
+export const postUpdateSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters").optional(),
+  content: z.string().min(10, "Content must be at least 10 characters").optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+  categories: z.array(z.number().int()).optional()
+});
+
+export const validatePostCreate = validate(postCreateSchema);
+export const validatePostUpdate = validate(postUpdateSchema);
 export const validateRegister = validate(registerSchema);
 export const validateLogin = validate(loginSchema);

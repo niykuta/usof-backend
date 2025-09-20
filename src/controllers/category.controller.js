@@ -25,6 +25,14 @@ export async function posts(req, res) {
   res.json(posts);
 }
 
+export async function create(req, res) {
+  const { title, description } = req.body;
+  if (!title) throw new ValidationError("Title is required");
+
+  const category = await CategoryModel.create({ title, description });
+  res.status(201).json(category);
+}
+
 export async function update(req, res) {
   const { category_id } = req.params;
   const { title, description } = req.body;
