@@ -46,6 +46,23 @@ export const POST_QUERIES = {
     SET title = ?, content = ?, status = ?
     WHERE id = ?
   `,
+  FIND_ALL_WITH_LIKES: `
+    SELECT
+      p.*,
+      u.login as author_login,
+      u.full_name as author_name,
+      COUNT(CASE WHEN pl.type = 'like' THEN 1 END) as like_count,
+      COUNT(CASE WHEN pl.type = 'dislike' THEN 1 END) as dislike_count,
+      (COUNT(CASE WHEN pl.type = 'like' THEN 1 END) - COUNT(CASE WHEN pl.type = 'dislike' THEN 1 END)) as total_likes
+    FROM posts p
+    LEFT JOIN post_likes pl ON p.id = pl.post_id
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE 1=1
+    {{WHERE}}
+    GROUP BY p.id
+    {{ORDER_BY}}
+    {{LIMIT}}
+  `
 };
 
 export const CATEGORY_QUERIES = {

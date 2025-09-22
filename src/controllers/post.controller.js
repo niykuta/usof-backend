@@ -5,7 +5,36 @@ import CommentModel from "#src/models/comment.model.js";
 import PostLikeModel from "#src/models/postLike.model.js";
 
 export async function list(req, res) {
-  const posts = await PostModel.findAllWithCategories();
+  const {
+    sortBy = 'likes',
+    sortOrder = 'DESC',
+    categories,
+    status,
+    dateFrom,
+    dateTo,
+    limit,
+    offset = 0
+  } = req.query;
+
+  let categoriesArray = [];
+  if (categories) {
+    categoriesArray = Array.isArray(categories)
+      ? categories.map(Number).filter(Boolean)
+      : categories.split(',').map(Number).filter(Boolean);
+  }
+
+  const options = {
+    sortBy,
+    sortOrder: sortOrder.toUpperCase(),
+    categories: categoriesArray,
+    status,
+    dateFrom,
+    dateTo,
+    limit: limit ? parseInt(limit) : null,
+    offset: parseInt(offset)
+  };
+
+  const posts = await PostModel.findAllWithFiltersAndSorting(options);
   res.json(posts);
 }
 
