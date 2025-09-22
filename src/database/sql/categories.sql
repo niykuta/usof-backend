@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS categories (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE IF NOT EXISTS post_categories (
     post_id INT NOT NULL,
     category_id INT NOT NULL,

@@ -87,3 +87,53 @@ export const POST_CATEGORY_QUERIES = {
   `
 };
 
+export const COMMENT_QUERIES = {
+  CREATE: `
+    INSERT INTO comments (post_id, user_id, content)
+    VALUES (?, ?, ?)
+  `,
+  UPDATE: `
+    UPDATE comments
+    SET status = ?
+    WHERE id = ?
+  `,
+  FIND_BY_POST: `
+    SELECT * FROM comments
+    WHERE post_id = ?
+    ORDER BY created_at ASC
+  `
+};
+
+export const POST_LIKE_QUERIES = {
+  CREATE: `
+    INSERT INTO post_likes (post_id, user_id, type)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE type = VALUES(type)
+  `,
+  FIND_BY_POST: `
+    SELECT * FROM post_likes
+    WHERE post_id = ?
+  `,
+  DELETE_BY_USER: `
+    DELETE FROM post_likes
+    WHERE post_id = ? AND user_id = ?
+  `
+};
+
+export const COMMENT_LIKE_QUERIES = {
+  CREATE: `
+    INSERT INTO comment_likes (comment_id, user_id, type)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE type = VALUES(type)
+  `,
+  FIND_BY_COMMENT: `
+    SELECT * FROM comment_likes
+    WHERE comment_id = ?
+  `,
+  DELETE_BY_USER: `
+    DELETE FROM comment_likes
+    WHERE comment_id = ? AND user_id = ?
+  `
+};
+
+

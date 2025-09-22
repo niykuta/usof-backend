@@ -42,6 +42,21 @@ export const postUpdateSchema = z.object({
   categories: z.array(z.number().int()).optional()
 });
 
+export const commentCreateSchema = z.object({
+  content: z.string().min(1, "Content cannot be empty"),
+});
+
+export const commentUpdateSchema = z.object({
+  status: z.enum(["active", "inactive"]),
+});
+
+export const likeSchema = z.object({
+  type: z.enum(["like", "dislike"]),
+});
+
+export const validateLike = validate(likeSchema);
+export const validateCommentCreate = validate(commentCreateSchema);
+export const validateCommentUpdate = validate(commentUpdateSchema);
 export const validatePostCreate = validate(postCreateSchema);
 export const validatePostUpdate = validate(postUpdateSchema);
 export const validateRegister = validate(registerSchema);

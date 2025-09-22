@@ -1,6 +1,8 @@
 import PostModel from "#src/models/post.model.js";
 import CategoryModel from "#src/models/category.model.js";
 import { ValidationError, ForbiddenError } from "#src/utils/error.class.js";
+import CommentModel from "#src/models/comment.model.js";
+import PostLikeModel from "#src/models/postLike.model.js";
 
 export async function list(req, res) {
   const posts = await PostModel.findAllWithCategories();
@@ -112,5 +114,74 @@ export async function remove(req, res) {
   await CategoryModel.deleteByPost(id);
   await PostModel.delete(id);
 
+  res.status(204).send();
+}
+
+export async function comments(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  const comments = await CommentModel.findByPost(post_id);
+  res.json(comments);
+}
+
+export async function addComment(req, res) {
+  const { post_id } = req.params;
+  const { content } = req.validatedBody;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+  if (post.status !== "active") throw new ForbiddenError("Cannot comment inactive post");
+
+  const comment = await CommentModel.create({
+    post_id,
+    user_id: req.user.id,
+    content,
+  });
+
+  res.status(201).json({
+    message: "Comment created",
+    comment,
+  });
+}
+
+export async function likes(req, res) {
+  const { post_id } = req.params;
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  const likes = await PostLikeModel.findByPost(post_id);
+  res.json(likes);
+}
+
+export async function addLike(req, res) {
+  const { post_id } = req.params;
+  const { type } = req.validatedBody;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+  if (post.status !== "active") throw new ForbiddenError("Cannot like inactive post");
+
+  const like = await PostLikeModel.create({
+    post_id,
+    user_id: req.user.id,
+    type,
+  });
+
+  res.status(201).json({
+    message: "Like added",
+    like,
+  });
+}
+
+export async function removeLike(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  await PostLikeModel.deleteByUser(post_id, req.user.id);
   res.status(204).send();
 }
