@@ -1,5 +1,6 @@
 import UserModel from "#src/models/user.model.js";
 import FavoriteModel from "#src/models/favorite.model.js";
+import fileService from "#src/services/file.service.js";
 import { sanitizeUser } from "#src/utils/sanitize.utils.js";
 import { ForbiddenError, ValidationError } from "#src/utils/error.class.js";
 
@@ -44,11 +45,24 @@ export async function update(req, res) {
 }
 
 export async function avatar(req, res) {
+  if (!req.file) {
+    throw new ValidationError("No file uploaded");
+  }
 
-  // TODO add smth to upload files
+  const currentUser = await UserModel.find(req.user.id);
+
+  const avatarUrl = fileService.getFileUrl(req.file.filename, 'avatar');
+
+  await UserModel.update(req.user.id, { profile_picture: avatarUrl });
+
+  if (currentUser.profile_picture) {
+    const oldFilename = fileService.extractFilenameFromUrl(currentUser.profile_picture);
+    await fileService.deleteFile(oldFilename, 'avatar');
+  }
 
   res.status(200).json({
-    message: "Avatar upload not implemented yet"
+    message: "Avatar uploaded successfully",
+    avatar_url: avatarUrl
   });
 }
 

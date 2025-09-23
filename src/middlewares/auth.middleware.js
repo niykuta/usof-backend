@@ -1,7 +1,7 @@
 import { verifyAccessToken } from "#src/utils/jwt.utils.js";
 import { AuthError, ForbiddenError } from "#src/utils/error.class.js";
 
-export function requireAuth(req, res, next) {
+function authenticate(req, res, next) {
   const authHeader = req.headers["authorization"];
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return next(new AuthError("No token provided"));
@@ -13,19 +13,18 @@ export function requireAuth(req, res, next) {
   next();
 }
 
+export function requireAuth(req, res, next) {
+  authenticate(req, res, next);
+}
+
 export function requireAdmin(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return next(new AuthError("No token provided"));
-  }
+  authenticate(req, res, (err) => {
+    if (err) return next(err);
 
-  const token = authHeader.split(" ")[1];
-  const payload = verifyAccessToken(token);
+    if (req.user.role !== "admin") {
+      return next(new ForbiddenError("Admin access required"));
+    }
 
-  if (payload.role !== "admin") {
-    return next(new ForbiddenError("Admin access required"));
-  }
-
-  req.user = { id: payload.id, role: payload.role };
-  next();
+    next();
+  });
 }
