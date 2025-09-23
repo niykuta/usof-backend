@@ -24,3 +24,13 @@ export async function sendPasswordResetEmail(to, token) {
   });
 }
 
+export async function sendEmailVerification(to, token) {
+  const verifyUrl = `${process.env.BACKEND_URL}/api/auth/verify-email/${token}`;
+  return sendEmail({
+    to,
+    subject: "Verify Your Email",
+    html: `<p>Click <a href="${verifyUrl}">here</a> to verify your email address.</p>`,
+    text: `Open this link to verify your email: ${verifyUrl}`
+  });
+}
+

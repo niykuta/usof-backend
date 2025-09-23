@@ -2,10 +2,11 @@ import bcrypt from "bcrypt";
 import SessionModel from "#src/models/sessions.model.js";
 import UserModel from "#src/models/user.model.js";
 import ResetModel from "#src/models/reset.model.js";
+import EmailVerificationModel from "#src/models/emailVerification.model.js";
 import { AuthError, ConflictError, ValidationError } from "#src/utils/error.class.js";
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "#src/utils/jwt.utils.js";
 import { generateResetToken, hashResetToken } from "#src/utils/token.utils.js";
-import { sendPasswordResetEmail } from "#src/utils/email.utils.js";
+import { sendPasswordResetEmail, sendEmailVerification } from "#src/utils/email.utils.js";
 
 export async function register(req, res) {
   const { login, password, full_name, email } = req.body;
@@ -14,10 +15,22 @@ export async function register(req, res) {
   if (existingUser) throw new ConflictError("User already exists");
 
   const user = await UserModel.create({ login, password, full_name, email });
+
+  const verificationToken = generateResetToken().token;
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await EmailVerificationModel.create({
+    user_id: user.id,
+    token: verificationToken,
+    expires_at: expiresAt
+  });
+
+  await sendEmailVerification(user.email, verificationToken);
+
   const { password: _, ...userData } = user;
 
   res.status(201).json({
-    message: "User registered successfully",
+    message: "User registered successfully. Please check your email to verify your account.",
     user: userData,
   });
 }
@@ -30,6 +43,8 @@ export async function login(req, res) {
 
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) throw new AuthError("Invalid login or password");
+
+  if (!user.email_verified) throw new AuthError("Please verify your email before logging in");
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
@@ -138,5 +153,19 @@ export async function confirm(req, res) {
 
   res.status(200).json({
     message: "Password reset successful",
+  });
+}
+
+export async function verify(req, res) {
+  const { token } = req.params;
+
+  const verification = await EmailVerificationModel.findByToken(token);
+  if (!verification) throw new AuthError("Invalid or expired verification token");
+
+  await UserModel.verifyEmail(verification.user_id);
+  await EmailVerificationModel.deleteByUserId(verification.user_id);
+
+  res.status(200).json({
+    message: "Email verified successfully",
   });
 }

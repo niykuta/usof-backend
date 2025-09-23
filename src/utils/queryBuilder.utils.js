@@ -57,13 +57,8 @@ class QueryBuilder {
       finalQuery = finalQuery.replace('{{WHERE}}', '');
     }
 
-    if (!finalQuery.includes('{{ORDER_BY}}')) {
-      finalQuery = finalQuery.replace('{{ORDER_BY}}', '');
-    }
-
-    if (!finalQuery.includes('{{LIMIT}}')) {
-      finalQuery = finalQuery.replace('{{LIMIT}}', '');
-    }
+    finalQuery = finalQuery.replace(/\{\{ORDER_BY}}/g, '');
+    finalQuery = finalQuery.replace(/\{\{LIMIT}}/g, '');
 
     return {
       query: finalQuery,
@@ -104,9 +99,7 @@ export class PostQueryBuilder {
     const sortColumn = sortBy === 'date' ? 'p.created_at' : 'total_likes';
     builder.orderBy(sortColumn, sortOrder);
 
-    if (limit) {
-      builder.limit(limit, offset);
-    }
+    builder.limit(limit, offset);
 
     return builder.build();
   }

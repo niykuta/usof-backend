@@ -13,7 +13,13 @@ class CategoryModel extends BaseModel {
   }
 
   async update(id, { title, description }) {
-    await db.execute(CATEGORY_QUERIES.UPDATE, [title, description, id]);
+    const currentCategory = await this.find(id);
+    if (!currentCategory) return null;
+
+    const newTitle = title !== undefined ? title : currentCategory.title;
+    const newDescription = description !== undefined ? description : currentCategory.description;
+
+    await db.execute(CATEGORY_QUERIES.UPDATE, [newTitle, newDescription, id]);
     return this.find(id);
   }
 

@@ -43,6 +43,11 @@ class UserModel extends BaseModel {
     const [rows] = await db.execute(USER_QUERIES.FIND_BY_EMAIL, [email]);
     return rows[0] || null;
   }
+
+  async verifyEmail(id) {
+    await db.execute(USER_QUERIES.VERIFY_EMAIL, [id]);
+    return this.find(id);
+  }
 }
 
 export default new UserModel();

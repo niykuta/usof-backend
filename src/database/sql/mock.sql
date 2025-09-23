@@ -1,12 +1,10 @@
-USE usof_db;
-
-INSERT INTO users (login, password, full_name, email, profile_picture, rating, role) VALUES
-('admin', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Administrator User', 'admin@usof.dev', NULL, 100, 'admin'),
-('johndoe', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'John Doe', 'john@usof.dev', NULL, 85, 'user'),
-('alice_dev', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Alice Developer', 'alice@usof.dev', NULL, 92, 'user'),
-('bob_coder', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Bob Coder', 'bob@usof.dev', NULL, 67, 'user'),
-('sarah_js', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Sarah JavaScript', 'sarah@usof.dev', NULL, 78, 'user'),
-('mike_py', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Mike Python', 'mike@usof.dev', NULL, 55, 'user');
+INSERT INTO users (login, password, full_name, email, email_verified, profile_picture, rating, role) VALUES
+('admin', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Administrator User', 'admin@usof.dev', TRUE, NULL, 100, 'admin'),
+('johndoe', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'John Doe', 'john@usof.dev', TRUE, NULL, 85, 'user'),
+('alice_dev', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Alice Developer', 'alice@usof.dev', TRUE, NULL, 92, 'user'),
+('bob_coder', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Bob Coder', 'bob@usof.dev', TRUE, NULL, 67, 'user'),
+('sarah_js', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Sarah JavaScript', 'sarah@usof.dev', TRUE, NULL, 78, 'user'),
+('mike_py', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Mike Python', 'mike@usof.dev', TRUE, NULL, 55, 'user');
 
 INSERT INTO categories (title, description) VALUES
 ('JavaScript', 'Questions and discussions about JavaScript programming language'),

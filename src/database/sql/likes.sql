@@ -1,5 +1,3 @@
-USE usof_db;
-
 CREATE TABLE IF NOT EXISTS post_likes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     post_id INT NOT NULL,

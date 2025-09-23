@@ -39,7 +39,7 @@ export async function list(req, res) {
 }
 
 export async function get(req, res) {
-  const post = await PostModel.findWithCategories(req.params.id);
+  const post = await PostModel.findWithCategories(req.params.post_id);
   if (!post) throw new ValidationError("Post not found");
 
   res.json(post);

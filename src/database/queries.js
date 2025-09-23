@@ -8,6 +8,11 @@ export const USER_QUERIES = {
     SET login = ?, password = ?, full_name = ?, email = ?, profile_picture = ?, role = ?
     WHERE id = ?
   `,
+  VERIFY_EMAIL: `
+    UPDATE users
+    SET email_verified = TRUE
+    WHERE id = ?
+  `,
   FIND_BY_ID: `SELECT * FROM users WHERE id = ?`,
   FIND_BY_LOGIN: `SELECT * FROM users WHERE login = ?`,
   FIND_BY_EMAIL: `SELECT * FROM users WHERE email = ?`,
@@ -19,8 +24,8 @@ export const SESSION_QUERIES = {
     VALUES (?, ?, ?)
   `,
   UPDATE: `
-    UPDATE session
-    SET refresh_token = ?, expires_at = ? 
+    UPDATE sessions
+    SET refresh_token = ?, expires_at = ?
     WHERE user_id = ?
   `,
   FIND_BY_USER: `SELECT * FROM sessions WHERE user_id = ?`,
@@ -153,4 +158,17 @@ export const COMMENT_LIKE_QUERIES = {
   `
 };
 
-
+export const EMAIL_VERIFICATION_QUERIES = {
+  CREATE: `
+    INSERT INTO email_verifications (user_id, token, expires_at)
+    VALUES (?, ?, ?)
+  `,
+  FIND_BY_TOKEN: `
+    SELECT * FROM email_verifications
+    WHERE token = ? AND expires_at > NOW()
+  `,
+  DELETE_BY_USER: `
+    DELETE FROM email_verifications
+    WHERE user_id = ?
+  `
+};
