@@ -1,4 +1,4 @@
-INSERT INTO users (login, password, full_name, email, email_verified, profile_picture, rating, role) VALUES
+INSERT IGNORE INTO users (login, password, full_name, email, email_verified, profile_picture, rating, role) VALUES
 ('admin', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Administrator User', 'admin@usof.dev', TRUE, NULL, 100, 'admin'),
 ('johndoe', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'John Doe', 'john@usof.dev', TRUE, NULL, 85, 'user'),
 ('alice_dev', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Alice Developer', 'alice@usof.dev', TRUE, NULL, 92, 'user'),
@@ -6,7 +6,7 @@ INSERT INTO users (login, password, full_name, email, email_verified, profile_pi
 ('sarah_js', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Sarah JavaScript', 'sarah@usof.dev', TRUE, NULL, 78, 'user'),
 ('mike_py', '$2b$10$8K1p/a0dClxnS7ZqBa6rGOIXPaF.C99YnBLZc.LxaUvNXBJEQhR2K', 'Mike Python', 'mike@usof.dev', TRUE, NULL, 55, 'user');
 
-INSERT INTO categories (title, description) VALUES
+INSERT IGNORE INTO categories (title, description) VALUES
 ('JavaScript', 'Questions and discussions about JavaScript programming language'),
 ('Node.js', 'Server-side JavaScript runtime environment questions'),
 ('React', 'React library for building user interfaces'),
@@ -16,7 +16,7 @@ INSERT INTO categories (title, description) VALUES
 ('HTML', 'HyperText Markup Language fundamentals'),
 ('API', 'REST APIs, GraphQL, and web services');
 
-INSERT INTO posts (user_id, title, content, status) VALUES
+INSERT IGNORE INTO posts (user_id, title, content, status) VALUES
 (2, 'How to handle async operations in JavaScript?', 'I am struggling with understanding promises and async/await. Can someone explain the best practices?', 'active'),
 (3, 'Best practices for Node.js error handling', 'What are the recommended patterns for handling errors in Node.js applications?', 'active'),
 (4, 'React state management without Redux', 'Is there a way to manage complex state in React without using Redux?', 'active'),
@@ -25,7 +25,7 @@ INSERT INTO posts (user_id, title, content, status) VALUES
 (2, 'CSS Grid vs Flexbox', 'When should I use CSS Grid over Flexbox?', 'active'),
 (3, 'RESTful API design principles', 'What are the key principles to follow when designing REST APIs?', 'active');
 
-INSERT INTO post_categories (post_id, category_id) VALUES
+INSERT IGNORE INTO post_categories (post_id, category_id) VALUES
 (1, 1), (1, 2),
 (2, 2),
 (3, 3),
@@ -34,7 +34,7 @@ INSERT INTO post_categories (post_id, category_id) VALUES
 (6, 6),
 (7, 8);
 
-INSERT INTO comments (post_id, user_id, content, status) VALUES
+INSERT IGNORE INTO comments (post_id, user_id, content, status) VALUES
 (1, 3, 'Promises are great for handling asynchronous operations. Use async/await for cleaner code.', 'active'),
 (1, 4, 'You should also learn about Promise.all() and Promise.race() for advanced use cases.', 'active'),
 (2, 5, 'Try using try-catch blocks with proper error middleware in Express.', 'active'),
@@ -44,7 +44,7 @@ INSERT INTO comments (post_id, user_id, content, status) VALUES
 (6, 4, 'Use Flexbox for one-dimensional layouts, Grid for two-dimensional.', 'active'),
 (7, 5, 'Follow REST conventions: use proper HTTP methods and status codes.', 'active');
 
-INSERT INTO post_likes (post_id, user_id, type) VALUES
+INSERT IGNORE INTO post_likes (post_id, user_id, type) VALUES
 (1, 3, 'like'),
 (1, 4, 'like'),
 (1, 5, 'like'),
@@ -59,7 +59,7 @@ INSERT INTO post_likes (post_id, user_id, type) VALUES
 (7, 2, 'like'),
 (7, 3, 'like');
 
-INSERT INTO comment_likes (comment_id, user_id, type) VALUES
+INSERT IGNORE INTO comment_likes (comment_id, user_id, type) VALUES
 (1, 2, 'like'),
 (1, 4, 'like'),
 (2, 3, 'like'),

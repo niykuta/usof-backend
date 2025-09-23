@@ -9,14 +9,14 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbConfig = {
+const rootConfig = {
   host: process.env.DB_HOST,
   user: 'root',
-  password: process.env.ROOT_PASSWORD || 'root',
+  password: process.env.ROOT_PASSWORD,
   multipleStatements: true
 };
 
-const userDbConfig = {
+const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -37,24 +37,20 @@ async function runSqlFile(connection, filePath) {
 
 async function initializeDatabase() {
   let connection;
-  let userConnection;
 
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(rootConfig);
+    const databasePath = path.join(__dirname, 'sql', 'database.sql');
+    await runSqlFile(connection, databasePath);
 
-    const filePath = path.join(__dirname, 'sql', 'database.sql');
-    await runSqlFile(connection, filePath);
-
-    await connection.execute(`CREATE USER IF NOT EXISTS '${process.env.DB_USER}'@'localhost' IDENTIFIED BY '${process.env.DB_PASSWORD}'`);
+    await connection.execute(`DROP USER IF EXISTS '${process.env.DB_USER}'@'localhost'`);
+    await connection.execute(`CREATE USER '${process.env.DB_USER}'@'localhost' IDENTIFIED BY '${process.env.DB_PASSWORD}'`);
     await connection.execute(`GRANT ALL PRIVILEGES ON ${process.env.DB_NAME}.* TO '${process.env.DB_USER}'@'localhost'`);
     await connection.execute('FLUSH PRIVILEGES');
 
     await connection.end();
 
-    connection = await mysql.createConnection({
-      ...dbConfig,
-      database: process.env.DB_NAME
-    });
+    connection = await mysql.createConnection(dbConfig);
 
     const sqlFiles = [
       'users.sql',
@@ -72,33 +68,20 @@ async function initializeDatabase() {
 
     for (const file of sqlFiles) {
       const filePath = path.join(sqlDir, file);
-      console.log(`Running ${file}...`);
       await runSqlFile(connection, filePath);
-      console.log(`${file} completed`);
     }
-
-    await connection.end();
-
-    userConnection = await mysql.createConnection(userDbConfig);
 
     const mockDataPath = path.join(sqlDir, 'mock.sql');
-    try {
-      await fs.access(mockDataPath);
-      await runSqlFile(userConnection, mockDataPath);
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        throw error;
-      }
-    }
+    await fs.access(mockDataPath);
+    await runSqlFile(connection, mockDataPath);
 
-    await userConnection.end();
+    await connection.end();
 
   } catch (error) {
     console.error('Database initialization failed:', error.message);
     process.exit(1);
   } finally {
     if (connection) await connection.end();
-    if (userConnection) await userConnection.end();
   }
 }
 

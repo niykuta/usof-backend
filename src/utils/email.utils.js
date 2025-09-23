@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import dotenv from "dotenv";
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function sendEmail({ to, subject, html, text }) {
   return resend.emails.send({
