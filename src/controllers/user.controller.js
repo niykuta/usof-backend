@@ -23,8 +23,6 @@ export async function create(req, res) {
     throw new ValidationError("Missing required fields");
   }
 
-  if (req.user.role !== "admin") throw new ForbiddenError();
-
   const user = await UserModel.create({ login, password, full_name, email, role });
 
   res.status(201).json({
