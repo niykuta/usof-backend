@@ -172,3 +172,33 @@ export const EMAIL_VERIFICATION_QUERIES = {
     WHERE user_id = ?
   `
 };
+
+export const FAVORITE_QUERIES = {
+  CREATE: `
+    INSERT INTO favorites (user_id, post_id)
+    VALUES (?, ?)
+  `,
+  FIND_BY_USER: `
+    SELECT f.*,
+           p.title, p.content, p.status, p.created_at as post_created_at,
+           u.login as author_login, u.full_name as author_name
+    FROM favorites f
+    JOIN posts p ON f.post_id = p.id
+    JOIN users u ON p.user_id = u.id
+    WHERE f.user_id = ?
+    ORDER BY f.created_at DESC
+  `,
+  FIND_BY_USER_AND_POST: `
+    SELECT * FROM favorites
+    WHERE user_id = ? AND post_id = ?
+  `,
+  DELETE_BY_USER_AND_POST: `
+    DELETE FROM favorites
+    WHERE user_id = ? AND post_id = ?
+  `,
+  COUNT_BY_POST: `
+    SELECT COUNT(*) as count
+    FROM favorites
+    WHERE post_id = ?
+  `
+};

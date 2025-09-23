@@ -64,7 +64,8 @@ async function initializeDatabase() {
       'likes.sql',
       'sessions.sql',
       'resets.sql',
-      'verifications.sql'
+      'verifications.sql',
+      'favorites.sql'
     ];
 
     const sqlDir = path.join(__dirname, 'sql');

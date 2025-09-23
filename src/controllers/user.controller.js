@@ -1,4 +1,5 @@
 import UserModel from "#src/models/user.model.js";
+import FavoriteModel from "#src/models/favorite.model.js";
 import { sanitizeUser } from "#src/utils/sanitize.utils.js";
 import { ForbiddenError, ValidationError } from "#src/utils/error.class.js";
 
@@ -59,5 +60,26 @@ export async function remove(req, res) {
 
   res.status(200).json({
     message: "User deleted successfully"
+  });
+}
+
+export async function favorites(req, res) {
+  const { user_id } = req.params;
+
+  const user = await UserModel.find(user_id);
+  if (!user) throw new ValidationError("User not found");
+
+  const isOwner = req.user.id === parseInt(user_id);
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new ForbiddenError("Cannot access other user's favorites");
+  }
+
+  const favorites = await FavoriteModel.findByUser(user_id);
+
+  res.json({
+    user_id: parseInt(user_id),
+    favorites
   });
 }

@@ -11,6 +11,8 @@ import {
   update,
   remove,
   removeLike,
+  addFavorite,
+  removeFavorite,
 } from "#src/controllers/post.controller.js";
 import { requireAuth } from "#src/middlewares/auth.middleware.js";
 import {
@@ -31,10 +33,12 @@ postRouter.get("/:post_id/like", likes);
 postRouter.post("/", requireAuth, validatePostCreate, create);
 postRouter.post("/:post_id/comments", requireAuth, validateCommentCreate, addComment);
 postRouter.post("/:post_id/like", requireAuth, validateLike, addLike);
+postRouter.post("/:post_id/favorite", requireAuth, addFavorite);
 
 postRouter.patch("/:post_id", requireAuth, validatePostUpdate, update);
 
 postRouter.delete("/:post_id", requireAuth, remove);
 postRouter.delete("/:post_id/like", requireAuth, removeLike);
+postRouter.delete("/:post_id/favorite", requireAuth, removeFavorite);
 
 export { postRouter };

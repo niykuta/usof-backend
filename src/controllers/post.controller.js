@@ -1,8 +1,9 @@
 import PostModel from "#src/models/post.model.js";
 import CategoryModel from "#src/models/category.model.js";
-import { ValidationError, ForbiddenError } from "#src/utils/error.class.js";
+import { ValidationError, ForbiddenError, ConflictError } from "#src/utils/error.class.js";
 import CommentModel from "#src/models/comment.model.js";
 import PostLikeModel from "#src/models/postLike.model.js";
+import FavoriteModel from "#src/models/favorite.model.js";
 
 export async function list(req, res) {
   const {
@@ -212,5 +213,38 @@ export async function removeLike(req, res) {
   if (!post) throw new ValidationError("Post not found");
 
   await PostLikeModel.deleteByUser(post_id, req.user.id);
+  res.status(204).send();
+}
+
+export async function addFavorite(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+  if (post.status !== "active") throw new ForbiddenError("Cannot favorite inactive post");
+
+  const existingFavorite = await FavoriteModel.findByUserAndPost(req.user.id, post_id);
+  if (existingFavorite) throw new ConflictError("Post already in favorites");
+
+  const favorite = await FavoriteModel.create({
+    user_id: req.user.id,
+    post_id,
+  });
+
+  res.status(201).json({
+    message: "Post added to favorites",
+    favorite,
+  });
+}
+
+export async function removeFavorite(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  const removed = await FavoriteModel.deleteByUserAndPost(req.user.id, post_id);
+  if (!removed) throw new ValidationError("Post not in favorites");
+
   res.status(204).send();
 }
