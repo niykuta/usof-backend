@@ -1,6 +1,6 @@
 import BaseModel from "#src/models/base.model.js";
 import db from "#src/database/pool.js";
-import { POST_QUERIES } from "#src/database/queries.js";
+import { POST_QUERIES, ADMIN_QUERIES } from "#src/database/queries.js";
 import CategoryModel from "#src/models/category.model.js";
 import { PostQueryBuilder } from "#src/utils/queryBuilder.utils.js";
 
@@ -68,6 +68,12 @@ class PostModel extends BaseModel {
         return post;
       })
     );
+  }
+
+  async deleteWithCascade(id) {
+    for (const query of ADMIN_QUERIES.DELETE_POST_CASCADE) {
+      await db.execute(query, [id]);
+    }
   }
 }
 

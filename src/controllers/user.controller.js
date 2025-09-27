@@ -68,7 +68,7 @@ export async function avatar(req, res) {
 
 export async function remove(req, res) {
   const { user_id } = req.params;
-  await UserModel.delete(user_id);
+  await UserModel.deleteWithCascade(user_id);
 
   res.status(200).json({
     message: "User deleted successfully"

@@ -1,6 +1,6 @@
 import BaseModel from '#src/models/base.model.js';
 import db from '#src/database/pool.js';
-import { USER_QUERIES } from '#src/database/queries.js';
+import { USER_QUERIES, ADMIN_QUERIES } from '#src/database/queries.js';
 
 class UserModel extends BaseModel {
   constructor() {
@@ -47,6 +47,12 @@ class UserModel extends BaseModel {
   async verifyEmail(id) {
     await db.execute(USER_QUERIES.VERIFY_EMAIL, [id]);
     return this.find(id);
+  }
+
+  async deleteWithCascade(id) {
+    for (const query of ADMIN_QUERIES.DELETE_USER_CASCADE) {
+      await db.execute(query, [id]);
+    }
   }
 }
 

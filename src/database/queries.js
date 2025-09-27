@@ -202,3 +202,27 @@ export const FAVORITE_QUERIES = {
     WHERE post_id = ?
   `
 };
+
+export const ADMIN_QUERIES = {
+  USER_COUNT: `SELECT COUNT(*) as count FROM users`,
+  POST_COUNT: `SELECT COUNT(*) as count FROM posts`,
+  COMMENT_COUNT: `SELECT COUNT(*) as count FROM comments`,
+  CATEGORY_COUNT: `SELECT COUNT(*) as count FROM categories`,
+  DELETE_USER_CASCADE: [
+    `DELETE FROM sessions WHERE user_id = ?`,
+    `DELETE FROM post_likes WHERE user_id = ?`,
+    `DELETE FROM comment_likes WHERE user_id = ?`,
+    `DELETE FROM favorites WHERE user_id = ?`,
+    `DELETE FROM comments WHERE user_id = ?`,
+    `DELETE FROM posts WHERE user_id = ?`,
+    `DELETE FROM users WHERE id = ?`
+  ],
+  DELETE_POST_CASCADE: [
+    `DELETE FROM post_likes WHERE post_id = ?`,
+    `DELETE FROM favorites WHERE post_id = ?`,
+    `DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM comments WHERE post_id = ?)`,
+    `DELETE FROM comments WHERE post_id = ?`,
+    `DELETE FROM post_categories WHERE post_id = ?`,
+    `DELETE FROM posts WHERE id = ?`
+  ]
+};

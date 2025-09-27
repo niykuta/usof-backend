@@ -18,6 +18,21 @@ export function requireAuth(req, res, next) {
 }
 
 export function requireAdmin(req, res, next) {
+  const skipAuth = ['.js', '.css', '.map', '.ico'].some(ext => req.path.endsWith(ext)) ||
+                   ['/assets/', '/api/resources/'].some(path => req.path.includes(path)) ||
+                   (req.path.startsWith('/admin/') && req.path !== '/admin');
+
+  if (skipAuth) {
+    return next();
+  }
+
+  let authHeader = req.headers["authorization"];
+  const queryToken = req.query.token;
+
+  if (!authHeader && queryToken) {
+    req.headers["authorization"] = `Bearer ${queryToken}`;
+  }
+
   authenticate(req, res, (err) => {
     if (err) return next(err);
 

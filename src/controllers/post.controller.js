@@ -141,8 +141,7 @@ export async function remove(req, res) {
     throw new ForbiddenError();
   }
 
-  await CategoryModel.deleteByPost(id);
-  await PostModel.delete(id);
+  await PostModel.deleteWithCascade(id);
 
   res.status(204).send();
 }
