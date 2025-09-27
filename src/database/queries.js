@@ -173,6 +173,81 @@ export const EMAIL_VERIFICATION_QUERIES = {
   `
 };
 
+export const SUBSCRIPTION_QUERIES = {
+  CREATE: `
+    INSERT INTO subscriptions (user_id, post_id)
+    VALUES (?, ?)
+  `,
+  FIND_BY_USER: `
+    SELECT s.*,
+           p.title, p.content, p.status, p.created_at as post_created_at,
+           u.login as author_login, u.full_name as author_name
+    FROM subscriptions s
+    JOIN posts p ON s.post_id = p.id
+    JOIN users u ON p.user_id = u.id
+    WHERE s.user_id = ?
+    ORDER BY s.created_at DESC
+  `,
+  FIND_BY_POST: `
+    SELECT s.*, u.login, u.full_name, u.email
+    FROM subscriptions s
+    JOIN users u ON s.user_id = u.id
+    WHERE s.post_id = ?
+  `,
+  FIND_BY_USER_AND_POST: `
+    SELECT * FROM subscriptions
+    WHERE user_id = ? AND post_id = ?
+  `,
+  DELETE_BY_USER_AND_POST: `
+    DELETE FROM subscriptions
+    WHERE user_id = ? AND post_id = ?
+  `,
+  COUNT_BY_POST: `
+    SELECT COUNT(*) as count
+    FROM subscriptions
+    WHERE post_id = ?
+  `
+};
+
+export const NOTIFICATION_QUERIES = {
+  CREATE: `
+    INSERT INTO notifications (user_id, post_id, type, message)
+    VALUES (?, ?, ?, ?)
+  `,
+  FIND_BY_USER: `
+    SELECT n.*,
+           p.title as post_title
+    FROM notifications n
+    JOIN posts p ON n.post_id = p.id
+    WHERE n.user_id = ?
+    ORDER BY n.created_at DESC
+    LIMIT ? OFFSET ?
+  `,
+  FIND_UNREAD_BY_USER: `
+    SELECT n.*,
+           p.title as post_title
+    FROM notifications n
+    JOIN posts p ON n.post_id = p.id
+    WHERE n.user_id = ? AND n.is_read = FALSE
+    ORDER BY n.created_at DESC
+  `,
+  MARK_AS_READ: `
+    UPDATE notifications
+    SET is_read = TRUE
+    WHERE id = ? AND user_id = ?
+  `,
+  MARK_ALL_AS_READ: `
+    UPDATE notifications
+    SET is_read = TRUE
+    WHERE user_id = ?
+  `,
+  COUNT_UNREAD_BY_USER: `
+    SELECT COUNT(*) as count
+    FROM notifications
+    WHERE user_id = ? AND is_read = FALSE
+  `
+};
+
 export const FAVORITE_QUERIES = {
   CREATE: `
     INSERT INTO favorites (user_id, post_id)

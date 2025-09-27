@@ -8,5 +8,8 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_post_comments (post_id, created_at),
+    INDEX idx_user_comments (user_id),
+    INDEX idx_status (status)
 );

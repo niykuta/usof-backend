@@ -5,6 +5,7 @@ import { userRouter } from './user.router.js';
 import { postRouter } from './post.router.js';
 import { commentRouter } from './comment.router.js';
 import { categoryRouter } from './category.router.js';
+import { notificationRouter } from './notification.router.js';
 
 const mainRouter = express.Router();
 
@@ -13,5 +14,6 @@ mainRouter.use('/users', userRouter);
 mainRouter.use('/posts', postRouter);
 mainRouter.use('/categories', categoryRouter);
 mainRouter.use('/comments', commentRouter);
+mainRouter.use('/notifications', notificationRouter);
 
 export { mainRouter };

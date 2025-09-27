@@ -3,5 +3,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id INT NOT NULL UNIQUE,
     refresh_token VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_refresh_token (refresh_token),
+    INDEX idx_expires_at (expires_at)
 );

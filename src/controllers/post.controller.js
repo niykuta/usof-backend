@@ -4,6 +4,8 @@ import { ValidationError, ForbiddenError, ConflictError } from "#src/utils/error
 import CommentModel from "#src/models/comment.model.js";
 import PostLikeModel from "#src/models/postLike.model.js";
 import FavoriteModel from "#src/models/favorite.model.js";
+import SubscriptionModel from "#src/models/subscription.model.js";
+import NotificationService from "#src/services/notification.service.js";
 
 export async function list(req, res) {
   const {
@@ -125,6 +127,8 @@ export async function update(req, res) {
 
   const updatedPost = await PostModel.update(id, fieldsToUpdate);
 
+  await NotificationService.notifyPostUpdate(id, updatedPost.title, req.user.full_name);
+
   res.status(200).json({
     message: "Post updated",
     post: updatedPost
@@ -169,6 +173,8 @@ export async function addComment(req, res) {
     user_id: req.user.id,
     content,
   });
+
+  await NotificationService.notifyNewComment(post_id, post.title, req.user.full_name, req.user.id);
 
   res.status(201).json({
     message: "Comment created",
@@ -244,6 +250,39 @@ export async function removeFavorite(req, res) {
 
   const removed = await FavoriteModel.deleteByUserAndPost(req.user.id, post_id);
   if (!removed) throw new ValidationError("Post not in favorites");
+
+  res.status(204).send();
+}
+
+export async function addSubscription(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+  if (post.status !== "active") throw new ForbiddenError("Cannot subscribe to inactive post");
+
+  const existingSubscription = await SubscriptionModel.findByUserAndPost(req.user.id, post_id);
+  if (existingSubscription) throw new ConflictError("Already subscribed to this post");
+
+  const subscription = await SubscriptionModel.create({
+    user_id: req.user.id,
+    post_id,
+  });
+
+  res.status(201).json({
+    message: "Subscribed to post",
+    subscription,
+  });
+}
+
+export async function removeSubscription(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  const removed = await SubscriptionModel.deleteByUserAndPost(req.user.id, post_id);
+  if (!removed) throw new ValidationError("Not subscribed to this post");
 
   res.status(204).send();
 }
