@@ -25,12 +25,23 @@ class PostModel extends BaseModel {
     return this.findWithCategories(postId);
   }
 
-  async update(id, { title, content, status, categories }) {
-    await db.execute(POST_QUERIES.UPDATE, [title, content, status, id]);
+  async update(id, updates) {
+    const current = await this.find(id);
+    if (!current) {
+      throw new Error("Post not found");
+    }
 
-    if (categories) {
+    const merged = {
+      title: updates.title ?? current.title,
+      content: updates.content ?? current.content,
+      status: updates.status ?? current.status
+    };
+
+    await db.execute(POST_QUERIES.UPDATE, [merged.title, merged.content, merged.status, id]);
+
+    if (updates.categories) {
       await CategoryModel.deleteByPost(id);
-      for (const categoryId of categories) {
+      for (const categoryId of updates.categories) {
         await CategoryModel.addToPost(id, categoryId);
       }
     }
@@ -43,6 +54,11 @@ class PostModel extends BaseModel {
     if (!post) return null;
 
     post.categories = await CategoryModel.findByPost(id);
+
+    const { POST_LIKE_QUERIES } = await import("#src/database/queries.js");
+    const [likes] = await db.execute(POST_LIKE_QUERIES.GET_RATING, [id]);
+    post.rating = (likes[0]?.likes || 0) - (likes[0]?.dislikes || 0);
+
     return post;
   }
 

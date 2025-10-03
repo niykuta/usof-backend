@@ -9,7 +9,7 @@ export async function get(req, res) {
 
 export async function update(req, res) {
   const { comment_id } = req.params;
-  const { status } = req.validatedBody;
+  const { content, status } = req.body;
 
   const comment = await CommentModel.find(comment_id);
   if (!comment) throw new ValidationError("Comment not found");
@@ -18,11 +18,16 @@ export async function update(req, res) {
   const isAdmin = req.user.role === "admin";
   if (!isAuthor && !isAdmin) throw new ForbiddenError();
 
-  const updated = await CommentModel.update(comment_id, { status });
+  const updates = {};
+  if (content !== undefined) updates.content = content;
+  if (status !== undefined) updates.status = status;
+
+  const updated = await CommentModel.update(comment_id, updates);
 
   res.json({
     message: "Comment updated",
-    comment: updated });
+    comment: updated
+  });
 }
 
 export async function remove(req, res) {

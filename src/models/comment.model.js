@@ -12,8 +12,16 @@ class CommentModel extends BaseModel {
     return this.find(result.insertId);
   }
 
-  async update(id, { status }) {
-    await db.execute(COMMENT_QUERIES.UPDATE, [status, id]);
+  async update(id, updates) {
+    const current = await this.find(id);
+    if (!current) throw new Error("Comment not found");
+
+    const merged = {
+      content: updates.content ?? current.content,
+      status: updates.status ?? current.status
+    };
+
+    await db.execute(COMMENT_QUERIES.UPDATE_FULL, [merged.content, merged.status, id]);
     return this.find(id);
   }
 

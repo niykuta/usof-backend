@@ -119,6 +119,11 @@ export const COMMENT_QUERIES = {
     SET status = ?
     WHERE id = ?
   `,
+  UPDATE_FULL: `
+    UPDATE comments
+    SET content = ?, status = ?
+    WHERE id = ?
+  `,
   FIND_BY_POST: `
     SELECT * FROM comments
     WHERE post_id = ?
@@ -136,9 +141,20 @@ export const POST_LIKE_QUERIES = {
     SELECT * FROM post_likes
     WHERE post_id = ?
   `,
+  FIND_BY_USER_AND_POST: `
+    SELECT * FROM post_likes
+    WHERE user_id = ? AND post_id = ?
+  `,
   DELETE_BY_USER: `
     DELETE FROM post_likes
     WHERE post_id = ? AND user_id = ?
+  `,
+  GET_RATING: `
+    SELECT
+      COUNT(CASE WHEN type = "like" THEN 1 END) as likes,
+      COUNT(CASE WHEN type = "dislike" THEN 1 END) as dislikes
+    FROM post_likes
+    WHERE post_id = ?
   `
 };
 
@@ -151,6 +167,10 @@ export const COMMENT_LIKE_QUERIES = {
   FIND_BY_COMMENT: `
     SELECT * FROM comment_likes
     WHERE comment_id = ?
+  `,
+  FIND_BY_USER_AND_COMMENT: `
+    SELECT * FROM comment_likes
+    WHERE user_id = ? AND comment_id = ?
   `,
   DELETE_BY_USER: `
     DELETE FROM comment_likes
@@ -211,23 +231,31 @@ export const SUBSCRIPTION_QUERIES = {
 
 export const NOTIFICATION_QUERIES = {
   CREATE: `
-    INSERT INTO notifications (user_id, post_id, type, message)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO notifications (user_id, post_id, comment_id, type, message)
+    VALUES (?, ?, ?, ?, ?)
   `,
-  FIND_BY_USER: `
+  CREATE_BULK: (count) => {
+    const placeholders = Array(count).fill('(?, ?, ?, ?, ?)').join(', ');
+    return `INSERT INTO notifications (user_id, post_id, comment_id, type, message) VALUES ${placeholders}`;
+  },
+  FIND_BY_USER: (limit, offset) => `
     SELECT n.*,
-           p.title as post_title
+           p.title as post_title,
+           c.content as comment_content
     FROM notifications n
-    JOIN posts p ON n.post_id = p.id
+    LEFT JOIN posts p ON n.post_id = p.id
+    LEFT JOIN comments c ON n.comment_id = c.id
     WHERE n.user_id = ?
     ORDER BY n.created_at DESC
-    LIMIT ? OFFSET ?
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
   `,
   FIND_UNREAD_BY_USER: `
     SELECT n.*,
-           p.title as post_title
+           p.title as post_title,
+           c.content as comment_content
     FROM notifications n
-    JOIN posts p ON n.post_id = p.id
+    LEFT JOIN posts p ON n.post_id = p.id
+    LEFT JOIN comments c ON n.comment_id = c.id
     WHERE n.user_id = ? AND n.is_read = FALSE
     ORDER BY n.created_at DESC
   `,

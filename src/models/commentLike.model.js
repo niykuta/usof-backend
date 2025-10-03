@@ -17,6 +17,11 @@ class CommentLikeModel extends BaseModel {
     return rows;
   }
 
+  async findByUserAndComment(userId, commentId) {
+    const [rows] = await db.execute(COMMENT_LIKE_QUERIES.FIND_BY_USER_AND_COMMENT, [userId, commentId]);
+    return rows[0] || null;
+  }
+
   async deleteByUser(commentId, userId) {
     await db.execute(COMMENT_LIKE_QUERIES.DELETE_BY_USER, [commentId, userId]);
   }

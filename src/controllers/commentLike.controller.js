@@ -1,6 +1,6 @@
 import CommentLikeModel from "#src/models/commentLike.model.js";
 import CommentModel from "#src/models/comment.model.js";
-import { ValidationError } from "#src/utils/error.class.js";
+import { ValidationError, ConflictError } from "#src/utils/error.class.js";
 
 export async function list(req, res) {
   const { comment_id } = req.params;
@@ -17,6 +17,11 @@ export async function create(req, res) {
 
   const comment = await CommentModel.find(comment_id);
   if (!comment) throw new ValidationError("Comment not found");
+
+  const existingLike = await CommentLikeModel.findByUserAndComment(req.user.id, comment_id);
+  if (existingLike) {
+    throw new ConflictError("You have already rated this comment");
+  }
 
   const like = await CommentLikeModel.create({
     comment_id,

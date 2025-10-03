@@ -90,10 +90,10 @@ export async function create(req, res) {
 }
 
 export async function update(req, res) {
-  const { id } = req.params;
+  const { post_id } = req.params;
   const { title, content, status, categories } = req.body;
 
-  const post = await PostModel.find(id);
+  const post = await PostModel.find(post_id);
   if (!post) throw new ValidationError("Post not found");
 
   const isAuthor = req.user.id === post.user_id;
@@ -125,9 +125,9 @@ export async function update(req, res) {
     if (categories !== undefined) fieldsToUpdate.categories = categories;
   }
 
-  const updatedPost = await PostModel.update(id, fieldsToUpdate);
+  const updatedPost = await PostModel.update(post_id, fieldsToUpdate);
 
-  await NotificationService.notifyPostUpdate(id, updatedPost.title, req.user.full_name);
+  await NotificationService.notifyPostUpdate(post_id, updatedPost.title, req.user.full_name);
 
   res.status(200).json({
     message: "Post updated",
@@ -136,16 +136,16 @@ export async function update(req, res) {
 }
 
 export async function remove(req, res) {
-  const { id } = req.params;
+  const { post_id } = req.params;
 
-  const post = await PostModel.find(id);
+  const post = await PostModel.find(post_id);
   if (!post) throw new ValidationError("Post not found");
 
   if (req.user.id !== post.user_id && req.user.role !== "admin") {
     throw new ForbiddenError();
   }
 
-  await PostModel.deleteWithCascade(id);
+  await PostModel.deleteWithCascade(post_id);
 
   res.status(204).send();
 }
@@ -198,6 +198,11 @@ export async function addLike(req, res) {
   const post = await PostModel.find(post_id);
   if (!post) throw new ValidationError("Post not found");
   if (post.status !== "active") throw new ForbiddenError("Cannot like inactive post");
+
+  const existingLike = await PostLikeModel.findByUserAndPost(req.user.id, post_id);
+  if (existingLike) {
+    throw new ConflictError("You have already rated this post");
+  }
 
   const like = await PostLikeModel.create({
     post_id,

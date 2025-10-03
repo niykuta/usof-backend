@@ -17,6 +17,11 @@ class PostLikeModel extends BaseModel {
     return rows;
   }
 
+  async findByUserAndPost(userId, postId) {
+    const [rows] = await db.execute(POST_LIKE_QUERIES.FIND_BY_USER_AND_POST, [userId, postId]);
+    return rows[0] || null;
+  }
+
   async deleteByUser(postId, userId) {
     await db.execute(POST_LIKE_QUERIES.DELETE_BY_USER, [postId, userId]);
   }

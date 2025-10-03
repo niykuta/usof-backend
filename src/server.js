@@ -17,7 +17,6 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
-  app.use('/uploads', express.static('uploads'));
   app.use(express.static('public'));
 
   try {
@@ -27,7 +26,6 @@ async function startServer() {
     console.log('AdminJS initialized successfully');
   } catch (error) {
     console.error('Failed to initialize AdminJS:', error);
-    console.log('Continuing without AdminJS...');
   }
 
   app.get('/', (req, res) => {

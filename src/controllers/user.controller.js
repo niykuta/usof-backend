@@ -3,7 +3,8 @@ import FavoriteModel from "#src/models/favorite.model.js";
 import SubscriptionModel from "#src/models/subscription.model.js";
 import fileService from "#src/services/file.service.js";
 import { sanitizeUser } from "#src/utils/sanitize.utils.js";
-import { ForbiddenError, ValidationError } from "#src/utils/error.class.js";
+import { AuthError, ForbiddenError, ValidationError } from "#src/utils/error.class.js";
+import bcrypt from 'bcrypt';
 
 export async function list(req, res) {
   const users = await UserModel.findAll();
@@ -35,9 +36,32 @@ export async function create(req, res) {
 
 export async function update(req, res) {
   const { user_id } = req.params;
-  const updates = req.body;
+  const { old_password, new_password, ...otherUpdates } = req.body;
 
-  const updatedUser = await UserModel.update(user_id, updates);
+  const isOwner = req.user.id === parseInt(user_id);
+  const isAdmin = req.user.role === "admin";
+
+  if (!isOwner && !isAdmin) {
+    throw new ForbiddenError("Cannot update other user's data");
+  }
+
+  if (old_password && new_password) {
+    if (!isOwner) {
+      throw new ForbiddenError("Only the user can change their own password");
+    }
+
+    const user = await UserModel.find(user_id);
+    if (!user) throw new ValidationError("User not found");
+
+    const isValidPassword = await bcrypt.compare(old_password, user.password);
+    if (!isValidPassword) {
+      throw new AuthError("Invalid old password");
+    }
+
+    otherUpdates.password = await bcrypt.hash(new_password, 12);
+  }
+
+  const updatedUser = await UserModel.update(user_id, otherUpdates);
 
   res.status(200).json({
     message: "User updated successfully",

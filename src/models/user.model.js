@@ -20,14 +20,28 @@ class UserModel extends BaseModel {
     return this.find(result.insertId);
   }
 
-  async update(id, { login, password, full_name, email, profile_picture, role }) {
+  async update(id, updates) {
+    const current = await this.find(id);
+    if (!current) {
+      throw new Error("User not found");
+    }
+
+    const merged = {
+      login: updates.login ?? current.login,
+      password: updates.password ?? current.password,
+      full_name: updates.full_name ?? current.full_name,
+      email: updates.email ?? current.email,
+      profile_picture: updates.profile_picture ?? current.profile_picture,
+      role: updates.role ?? current.role
+    };
+
     await db.execute(USER_QUERIES.UPDATE, [
-      login,
-      password,
-      full_name,
-      email,
-      profile_picture,
-      role,
+      merged.login,
+      merged.password,
+      merged.full_name,
+      merged.email,
+      merged.profile_picture,
+      merged.role,
       id
     ]);
 

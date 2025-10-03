@@ -27,6 +27,8 @@ export async function register(req, res) {
 
   await sendEmailVerification(user.email, verificationToken);
 
+  console.log('Verification token:', verificationToken);
+
   const { password: _, ...userData } = user;
 
   res.status(201).json({
@@ -48,6 +50,8 @@ export async function login(req, res) {
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
+
+  console.log('Login tokens:', { accessToken, refreshToken });
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const existingSession = await SessionModel.findByUser(user.id);
@@ -84,6 +88,8 @@ export async function refresh(req, res) {
 
   const newAccessToken = generateAccessToken({ id: payload.id, role: payload.role });
   const newRefreshToken = generateRefreshToken({ id: payload.id });
+
+  console.log('Refreshed tokens:', { accessToken: newAccessToken, refreshToken: newRefreshToken });
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   await SessionModel.update({ user_id: payload.id, refresh_token: newRefreshToken, expires_at: expiresAt });

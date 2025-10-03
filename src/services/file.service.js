@@ -3,7 +3,7 @@ import path from 'path';
 
 class FileService {
   constructor() {
-    this.uploadsDir = 'uploads';
+    this.uploadsDir = path.join('public', 'uploads');
     this.avatarDir = path.join(this.uploadsDir, 'avatars');
     this.postsDir = path.join(this.uploadsDir, 'posts');
   }

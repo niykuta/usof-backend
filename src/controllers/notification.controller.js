@@ -13,7 +13,7 @@ export async function list(req, res) {
   }
 
   const notifications = await NotificationService.getUserNotifications(
-    user_id,
+    parseInt(user_id),
     parseInt(limit),
     parseInt(offset)
   );
@@ -38,13 +38,13 @@ export async function unread(req, res) {
     throw new ForbiddenError("Cannot access other user's notifications");
   }
 
-  const notifications = await NotificationService.getUnreadNotifications(user_id);
-  const count = await NotificationService.getUnreadCount(user_id);
+  const notifications = await NotificationService.getUnreadNotifications(parseInt(user_id));
+  const count = await NotificationService.getUnreadCount(parseInt(user_id));
 
   res.json({
     user_id: parseInt(user_id),
     unread_count: count,
-    notifications
+    unread_notifications: notifications
   });
 }
 

@@ -10,6 +10,7 @@ class NotificationService {
     const notifications = subscribers.map(subscriber => ({
       user_id: subscriber.user_id,
       post_id: postId,
+      comment_id: null,
       type: 'post_updated',
       message: `Post "${postTitle}" was updated by ${updaterName}`
     }));
@@ -17,7 +18,7 @@ class NotificationService {
     return await NotificationModel.createBulk(notifications);
   }
 
-  async notifyNewComment(postId, postTitle, commenterName, excludeUserId = null) {
+  async notifyNewComment(postId, postTitle, commenterName, commentId = null, excludeUserId = null) {
     const subscribers = await SubscriptionModel.findByPost(postId);
 
     if (subscribers.length === 0) return;
@@ -27,6 +28,7 @@ class NotificationService {
       .map(subscriber => ({
         user_id: subscriber.user_id,
         post_id: postId,
+        comment_id: commentId,
         type: 'comment_added',
         message: `${commenterName} commented on post "${postTitle}"`
       }));

@@ -8,14 +8,14 @@ class NotificationModel extends BaseModel {
   }
 
   async create(notificationData) {
-    const { user_id, post_id, type, message } = notificationData;
+    const { user_id, post_id, comment_id, type, message } = notificationData;
 
-    const [result] = await db.execute(NOTIFICATION_QUERIES.CREATE, [user_id, post_id, type, message]);
+    const [result] = await db.execute(NOTIFICATION_QUERIES.CREATE, [user_id, post_id, comment_id, type, message]);
     return this.find(result.insertId);
   }
 
   async findByUser(userId, limit = 20, offset = 0) {
-    const [rows] = await db.execute(NOTIFICATION_QUERIES.FIND_BY_USER, [userId, limit, offset]);
+    const [rows] = await db.execute(NOTIFICATION_QUERIES.FIND_BY_USER(limit, offset), [userId]);
     return rows;
   }
 
@@ -42,9 +42,8 @@ class NotificationModel extends BaseModel {
   async createBulk(notifications) {
     if (notifications.length === 0) return;
 
-    const values = notifications.map(n => [n.user_id, n.post_id, n.type, n.message]);
-    const placeholders = notifications.map(() => '(?, ?, ?, ?)').join(', ');
-    const query = `INSERT INTO notifications (user_id, post_id, type, message) VALUES ${placeholders}`;
+    const values = notifications.map(n => [n.user_id, n.post_id, n.comment_id, n.type, n.message]);
+    const query = NOTIFICATION_QUERIES.CREATE_BULK(notifications.length);
 
     const [result] = await db.execute(query, values.flat());
     return result.affectedRows;
