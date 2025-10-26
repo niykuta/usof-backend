@@ -1,6 +1,6 @@
 {
   "name": "usof-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "USOF Backend API - Express.js REST API with MySQL",
   "main": "src/server.js",
   "type": "module",

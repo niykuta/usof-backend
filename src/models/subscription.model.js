@@ -10,8 +10,8 @@ class SubscriptionModel extends BaseModel {
   async create(subscriptionData) {
     const { user_id, post_id } = subscriptionData;
 
-    const [result] = await db.execute(SUBSCRIPTION_QUERIES.CREATE, [user_id, post_id]);
-    return this.find(result.insertId);
+    await db.execute(SUBSCRIPTION_QUERIES.CREATE, [user_id, post_id]);
+    return { user_id, post_id };
   }
 
   async findByUser(userId) {

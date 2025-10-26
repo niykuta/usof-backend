@@ -25,7 +25,7 @@ export async function sendPasswordResetEmail(to, token) {
 }
 
 export async function sendEmailVerification(to, token) {
-  const verifyUrl = `${process.env.BACKEND_URL}/api/auth/verify-email/${token}`;
+  const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${token}`;
   return sendEmail({
     to,
     subject: "Verify Your Email",

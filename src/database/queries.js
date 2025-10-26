@@ -295,23 +295,23 @@ export const SUBSCRIPTION_QUERIES = {
     VALUES (?, ?)
   `,
   FIND_BY_USER: `
-    SELECT s.*,
+    SELECT s.user_id, s.post_id,
            p.title, p.content, p.status, p.created_at as post_created_at,
            u.login as author_login, u.full_name as author_name
     FROM subscriptions s
     JOIN posts p ON s.post_id = p.id
     JOIN users u ON p.user_id = u.id
     WHERE s.user_id = ?
-    ORDER BY s.created_at DESC
+    ORDER BY p.created_at DESC
   `,
   FIND_BY_POST: `
-    SELECT s.*, u.login, u.full_name, u.email
+    SELECT s.user_id, s.post_id, u.login, u.full_name, u.email
     FROM subscriptions s
     JOIN users u ON s.user_id = u.id
     WHERE s.post_id = ?
   `,
   FIND_BY_USER_AND_POST: `
-    SELECT * FROM subscriptions
+    SELECT user_id, post_id FROM subscriptions
     WHERE user_id = ? AND post_id = ?
   `,
   DELETE_BY_USER_AND_POST: `
@@ -378,17 +378,17 @@ export const FAVORITE_QUERIES = {
     VALUES (?, ?)
   `,
   FIND_BY_USER: `
-    SELECT f.*,
+    SELECT f.user_id, f.post_id,
            p.title, p.content, p.status, p.created_at as post_created_at,
            u.login as author_login, u.full_name as author_name
     FROM favorites f
     JOIN posts p ON f.post_id = p.id
     JOIN users u ON p.user_id = u.id
     WHERE f.user_id = ?
-    ORDER BY f.created_at DESC
+    ORDER BY p.created_at DESC
   `,
   FIND_BY_USER_AND_POST: `
-    SELECT * FROM favorites
+    SELECT user_id, post_id FROM favorites
     WHERE user_id = ? AND post_id = ?
   `,
   DELETE_BY_USER_AND_POST: `

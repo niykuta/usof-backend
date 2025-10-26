@@ -40,7 +40,6 @@ export async function remove(req, res) {
   const isAdmin = req.user.role === "admin";
   if (!isAuthor && !isAdmin) throw new ForbiddenError();
 
-  // Soft delete: set status to 'deleted' and clear content
   await CommentModel.update(comment_id, {
     status: 'deleted',
     content: '[deleted]'

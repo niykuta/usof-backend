@@ -10,8 +10,8 @@ class FavoriteModel extends BaseModel {
   async create(favoriteData) {
     const { user_id, post_id } = favoriteData;
 
-    const [result] = await db.execute(FAVORITE_QUERIES.CREATE, [user_id, post_id]);
-    return this.find(result.insertId);
+    await db.execute(FAVORITE_QUERIES.CREATE, [user_id, post_id]);
+    return { user_id, post_id };
   }
 
   async findByUser(userId) {

@@ -452,33 +452,33 @@ INSERT IGNORE INTO subscriptions (user_id, post_id) VALUES
 (18, 24), (18, 37), (18, 60);
 
 INSERT IGNORE INTO notifications (user_id, type, message, post_id, comment_id, is_read) VALUES
-(2, 'comment', 'alice_wonder commented on your post', 1, 1, FALSE),
+(2, 'comment_added', 'alice_wonder commented on your post', 1, 1, FALSE),
 (2, 'like', 'sarah_connor liked your post', 1, NULL, FALSE),
-(2, 'comment', 'emma_watson replied to your comment', 1, 3, TRUE),
+(2, 'comment_added', 'emma_watson replied to your comment', 1, 3, TRUE),
 (3, 'like', 'john_smith liked your comment', NULL, 1, FALSE),
-(3, 'comment', 'kate_hudson commented on your post', 2, 5, FALSE),
+(3, 'comment_added', 'kate_hudson commented on your post', 2, 5, FALSE),
 (4, 'like', 'alice_wonder liked your post', 3, NULL, TRUE),
-(5, 'comment', 'john_smith commented on your post', 4, 13, FALSE),
+(5, 'comment_added', 'john_smith commented on your post', 4, 13, FALSE),
 (6, 'like', 'bob_builder liked your post', 5, NULL, FALSE),
-(7, 'comment', 'olivia_wilde commented on your post', 6, 17, TRUE),
+(7, 'comment_added', 'olivia_wilde commented on your post', 6, 17, TRUE),
 (8, 'like', 'leo_dicaprio liked your post', 7, NULL, FALSE),
-(9, 'comment', 'natalie_port commented on your post', 8, 21, FALSE),
+(9, 'comment_added', 'natalie_port commented on your post', 8, 21, FALSE),
 (10, 'like', 'brad_pitt liked your post', 9, NULL, TRUE),
-(11, 'comment', 'scarlett_jo commented on your post', 10, 25, FALSE),
+(11, 'comment_added', 'scarlett_jo commented on your post', 10, 25, FALSE),
 (12, 'like', 'matt_damon liked your post', 11, NULL, FALSE),
-(13, 'comment', 'david_garcia commented on your post', 13, 61, FALSE),
+(13, 'comment_added', 'david_garcia commented on your post', 13, 61, FALSE),
 (14, 'like', 'lisa_simpson liked your post', 14, NULL, FALSE),
-(15, 'comment', 'tom_hardy commented on your post', 15, 64, TRUE),
+(15, 'comment_added', 'tom_hardy commented on your post', 15, 64, TRUE),
 (16, 'like', 'nina_dobrev liked your post', 16, NULL, FALSE),
-(17, 'comment', 'chris_evans commented on your post', 17, 70, FALSE),
+(17, 'comment_added', 'chris_evans commented on your post', 17, 70, FALSE),
 (18, 'like', 'kate_hudson liked your post', 18, NULL, TRUE),
-(19, 'comment', 'ryan_gosling commented on your post', 19, 74, FALSE),
+(19, 'comment_added', 'ryan_gosling commented on your post', 19, 74, FALSE),
 (20, 'like', 'jennifer_law liked your post', 20, NULL, FALSE),
-(21, 'comment', 'daniel_craig commented on your post', 21, 80, TRUE),
+(21, 'comment_added', 'daniel_craig commented on your post', 21, 80, TRUE),
 (22, 'like', 'olivia_wilde liked your post', 22, NULL, FALSE),
-(23, 'comment', 'leo_dicaprio commented on your post', 23, 86, FALSE),
+(23, 'comment_added', 'leo_dicaprio commented on your post', 23, 86, FALSE),
 (24, 'like', 'natalie_port liked your post', 24, NULL, FALSE),
-(25, 'comment', 'brad_pitt commented on your post', 25, 92, TRUE);
+(25, 'comment_added', 'brad_pitt commented on your post', 25, 92, TRUE);
 
 UPDATE users u
 SET rating = (
