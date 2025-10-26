@@ -63,10 +63,6 @@ async function createAdminJS() {
           }
         },
         {
-          resource: adminDb.table('sessions'),
-          options: {}
-        },
-        {
           resource: adminDb.table('post_likes'),
           options: {}
         },
@@ -77,6 +73,49 @@ async function createAdminJS() {
         {
           resource: adminDb.table('favorites'),
           options: {}
+        },
+        {
+          resource: adminDb.table('subscriptions'),
+          options: {
+            properties: {
+              created_at: { isVisible: { edit: false, new: false } }
+            }
+          }
+        },
+        {
+          resource: adminDb.table('notifications'),
+          options: {
+            properties: {
+              message: { type: 'textarea' },
+              created_at: { isVisible: { edit: false, new: false } }
+            }
+          }
+        },
+        {
+          resource: adminDb.table('email_verifications'),
+          options: {
+            properties: {
+              token: { isVisible: false },
+              created_at: { isVisible: { edit: false, new: false } }
+            }
+          }
+        },
+        {
+          resource: adminDb.table('password_resets'),
+          options: {
+            properties: {
+              token: { isVisible: false },
+              created_at: { isVisible: { edit: false, new: false } }
+            }
+          }
+        },
+        {
+          resource: adminDb.table('post_images'),
+          options: {
+            properties: {
+              created_at: { isVisible: { edit: false, new: false } }
+            }
+          }
         }
       ],
       branding: {
@@ -93,10 +132,14 @@ async function createAdminJS() {
               posts: 'Posts',
               comments: 'Comments',
               categories: 'Categories',
-              sessions: 'Sessions',
               post_likes: 'Post Likes',
               comment_likes: 'Comment Likes',
-              favorites: 'Favorites'
+              favorites: 'Favorites',
+              subscriptions: 'Subscriptions',
+              notifications: 'Notifications',
+              email_verifications: 'Email Verifications',
+              password_resets: 'Password Resets',
+              post_images: 'Post Images'
             }
           }
         }

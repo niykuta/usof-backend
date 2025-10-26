@@ -16,6 +16,17 @@ function validate(schema) {
   };
 }
 
+export const parseMultipartJson = (req, res, next) => {
+  if (req.body.categories && typeof req.body.categories === 'string') {
+    try {
+      req.body.categories = JSON.parse(req.body.categories);
+    } catch (err) {
+      return next(new ValidationError('Invalid categories format'));
+    }
+  }
+  next();
+};
+
 export const registerSchema = z.object({
   login: z.string().min(3),
   email: z.string().email(),
@@ -44,6 +55,7 @@ export const postUpdateSchema = z.object({
 
 export const commentCreateSchema = z.object({
   content: z.string().min(1, "Content cannot be empty"),
+  parent_comment_id: z.number().int().positive().optional(),
 });
 
 export const commentUpdateSchema = z.object({

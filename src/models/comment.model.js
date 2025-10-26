@@ -7,8 +7,8 @@ class CommentModel extends BaseModel {
     super("comments");
   }
 
-  async create({ post_id, user_id, content }) {
-    const [result] = await db.execute(COMMENT_QUERIES.CREATE, [post_id, user_id, content]);
+  async create({ post_id, user_id, parent_comment_id = null, content }) {
+    const [result] = await db.execute(COMMENT_QUERIES.CREATE, [post_id, user_id, parent_comment_id, content]);
     return this.find(result.insertId);
   }
 
@@ -27,7 +27,27 @@ class CommentModel extends BaseModel {
 
   async findByPost(postId) {
     const [rows] = await db.execute(COMMENT_QUERIES.FIND_BY_POST, [postId]);
-    return rows;
+
+    const commentsMap = new Map();
+    const rootComments = [];
+
+    rows.forEach(comment => {
+      commentsMap.set(comment.id, { ...comment, replies: [] });
+    });
+
+    rows.forEach(comment => {
+      const commentWithReplies = commentsMap.get(comment.id);
+      if (comment.parent_comment_id === null) {
+        rootComments.push(commentWithReplies);
+      } else {
+        const parent = commentsMap.get(comment.parent_comment_id);
+        if (parent) {
+          parent.replies.push(commentWithReplies);
+        }
+      }
+    });
+
+    return rootComments;
   }
 }
 

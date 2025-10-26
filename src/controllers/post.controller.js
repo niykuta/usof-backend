@@ -1,11 +1,13 @@
 import PostModel from "#src/models/post.model.js";
 import CategoryModel from "#src/models/category.model.js";
+import UserModel from "#src/models/user.model.js";
 import { ValidationError, ForbiddenError, ConflictError } from "#src/utils/error.class.js";
 import CommentModel from "#src/models/comment.model.js";
 import PostLikeModel from "#src/models/postLike.model.js";
 import FavoriteModel from "#src/models/favorite.model.js";
 import SubscriptionModel from "#src/models/subscription.model.js";
 import NotificationService from "#src/services/notification.service.js";
+import fileService from "#src/services/file.service.js";
 
 export async function list(req, res) {
   const {
@@ -15,8 +17,11 @@ export async function list(req, res) {
     status,
     dateFrom,
     dateTo,
+    userId,
     limit,
-    offset = 0
+    offset = 0,
+    search,
+    commentCount
   } = req.query;
 
   let categoriesArray = [];
@@ -33,12 +38,24 @@ export async function list(req, res) {
     status,
     dateFrom,
     dateTo,
+    userId: userId ? parseInt(userId) : null,
     limit: limit ? parseInt(limit) : null,
-    offset: parseInt(offset)
+    offset: parseInt(offset),
+    search: search || null,
+    commentCount: commentCount !== undefined ? parseInt(commentCount) : null
   };
 
-  const posts = await PostModel.findAllWithFiltersAndSorting(options);
-  res.json(posts);
+  const [posts, total] = await Promise.all([
+    PostModel.findAllWithFiltersAndSorting(options),
+    PostModel.countWithFilters(options)
+  ]);
+
+  res.json({
+    posts,
+    total,
+    limit: options.limit,
+    offset: options.offset
+  });
 }
 
 export async function get(req, res) {
@@ -46,6 +63,17 @@ export async function get(req, res) {
   if (!post) throw new ValidationError("Post not found");
 
   res.json(post);
+}
+
+export async function incrementView(req, res) {
+  const { post_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  await PostModel.incrementViews(post_id);
+
+  res.status(204).send();
 }
 
 export async function categories(req, res) {
@@ -83,9 +111,16 @@ export async function create(req, res) {
     categories: categories || []
   });
 
+  if (req.files && req.files.length > 0) {
+    const imagePaths = req.files.map(file => `/uploads/posts/${file.filename}`);
+    await PostModel.addImages(post.id, imagePaths);
+  }
+
+  const postWithImages = await PostModel.findWithCategories(post.id);
+
   res.status(201).json({
     message: "Post created",
-    post
+    post: postWithImages
   });
 }
 
@@ -117,6 +152,7 @@ export async function update(req, res) {
   if (isAuthor) {
     if (title !== undefined) fieldsToUpdate.title = title;
     if (content !== undefined) fieldsToUpdate.content = content;
+    if (status !== undefined) fieldsToUpdate.status = status;
     if (categories !== undefined) fieldsToUpdate.categories = categories;
   }
 
@@ -127,11 +163,28 @@ export async function update(req, res) {
 
   const updatedPost = await PostModel.update(post_id, fieldsToUpdate);
 
-  await NotificationService.notifyPostUpdate(post_id, updatedPost.title, req.user.full_name);
+  if (req.files && req.files.length > 0) {
+    const existingImages = await PostModel.getImages(post_id);
+    const totalImages = existingImages.length + req.files.length;
+
+    if (totalImages <= 5) {
+      const imagePaths = req.files.map(file => `/uploads/posts/${file.filename}`);
+      await PostModel.addImages(post_id, imagePaths);
+    } else {
+      for (const file of req.files) {
+        await fileService.deleteFile(file.path);
+      }
+      throw new ValidationError('Cannot exceed 5 images per post');
+    }
+  }
+
+  const postWithImages = await PostModel.findWithCategories(post_id);
+
+  await NotificationService.notifyPostUpdate(post_id, postWithImages.title, req.user.full_name);
 
   res.status(200).json({
     message: "Post updated",
-    post: updatedPost
+    post: postWithImages
   });
 }
 
@@ -162,15 +215,24 @@ export async function comments(req, res) {
 
 export async function addComment(req, res) {
   const { post_id } = req.params;
-  const { content } = req.validatedBody;
+  const { content, parent_comment_id } = req.validatedBody;
 
   const post = await PostModel.find(post_id);
   if (!post) throw new ValidationError("Post not found");
   if (post.status !== "active") throw new ForbiddenError("Cannot comment inactive post");
 
+  if (parent_comment_id) {
+    const parentComment = await CommentModel.find(parent_comment_id);
+    if (!parentComment) throw new ValidationError("Parent comment not found");
+    if (parentComment.post_id !== parseInt(post_id)) {
+      throw new ValidationError("Parent comment belongs to different post");
+    }
+  }
+
   const comment = await CommentModel.create({
     post_id,
     user_id: req.user.id,
+    parent_comment_id: parent_comment_id || null,
     content,
   });
 
@@ -200,8 +262,14 @@ export async function addLike(req, res) {
   if (post.status !== "active") throw new ForbiddenError("Cannot like inactive post");
 
   const existingLike = await PostLikeModel.findByUserAndPost(req.user.id, post_id);
-  if (existingLike) {
-    throw new ConflictError("You have already rated this post");
+
+  if (existingLike && existingLike.type === type) {
+    await PostLikeModel.deleteByUser(post_id, req.user.id);
+    await UserModel.updateRating(post.user_id);
+    return res.status(200).json({
+      message: "Vote removed",
+      action: "removed"
+    });
   }
 
   const like = await PostLikeModel.create({
@@ -210,8 +278,11 @@ export async function addLike(req, res) {
     type,
   });
 
-  res.status(201).json({
-    message: "Like added",
+  await UserModel.updateRating(post.user_id);
+
+  res.status(existingLike ? 200 : 201).json({
+    message: existingLike ? "Vote updated" : "Vote added",
+    action: existingLike ? "updated" : "created",
     like,
   });
 }
@@ -223,6 +294,7 @@ export async function removeLike(req, res) {
   if (!post) throw new ValidationError("Post not found");
 
   await PostLikeModel.deleteByUser(post_id, req.user.id);
+  await UserModel.updateRating(post.user_id);
   res.status(204).send();
 }
 
@@ -290,4 +362,68 @@ export async function removeSubscription(req, res) {
   if (!removed) throw new ValidationError("Not subscribed to this post");
 
   res.status(204).send();
+}
+
+export async function deleteImage(req, res) {
+  const { post_id, image_id } = req.params;
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  const isAuthor = req.user.id === post.user_id;
+  const isAdmin = req.user.role === "admin";
+
+  if (!isAuthor && !isAdmin) {
+    throw new ForbiddenError("You don't have permission to delete this image");
+  }
+
+  const image = await PostModel.getImageById(image_id);
+  if (!image) throw new ValidationError("Image not found");
+
+  if (image.post_id !== parseInt(post_id)) {
+    throw new ValidationError("Image does not belong to this post");
+  }
+
+  const deleted = await PostModel.deleteImage(image_id, post_id);
+  if (!deleted) throw new ValidationError("Failed to delete image");
+
+  await fileService.deleteFile(`usof-backend${image.image_path}`);
+
+  res.status(204).send();
+}
+
+export async function deleteImagesBulk(req, res) {
+  const { post_id } = req.params;
+  const { image_ids } = req.body;
+
+  if (!Array.isArray(image_ids) || image_ids.length === 0) {
+    throw new ValidationError("image_ids must be a non-empty array");
+  }
+
+  const post = await PostModel.find(post_id);
+  if (!post) throw new ValidationError("Post not found");
+
+  const isAuthor = req.user.id === post.user_id;
+  const isAdmin = req.user.role === "admin";
+
+  if (!isAuthor && !isAdmin) {
+    throw new ForbiddenError("You don't have permission to delete these images");
+  }
+
+  const images = await PostModel.getImagesByIds(post_id, image_ids);
+
+  if (images.length === 0) {
+    throw new ValidationError("No valid images found");
+  }
+
+  const deletedCount = await PostModel.deleteImagesBulk(post_id, image_ids);
+
+  for (const image of images) {
+    await fileService.deleteFile(`usof-backend${image.image_path}`);
+  }
+
+  res.status(200).json({
+    message: "Images deleted",
+    deleted: deletedCount
+  });
 }

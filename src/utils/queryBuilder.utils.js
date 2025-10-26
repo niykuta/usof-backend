@@ -3,10 +3,17 @@ class QueryBuilder {
     this.query = baseQuery;
     this.params = [];
     this.whereConditions = [];
+    this.havingConditions = [];
   }
 
   where(condition, ...params) {
     this.whereConditions.push(condition);
+    this.params.push(...params);
+    return this;
+  }
+
+  having(condition, ...params) {
+    this.havingConditions.push(condition);
     this.params.push(...params);
     return this;
   }
@@ -57,6 +64,13 @@ class QueryBuilder {
       finalQuery = finalQuery.replace('{{WHERE}}', '');
     }
 
+    if (this.havingConditions.length > 0) {
+      const havingClause = this.havingConditions.join(' AND ');
+      finalQuery = finalQuery.replace('{{HAVING}}', `HAVING ${havingClause}`);
+    } else {
+      finalQuery = finalQuery.replace('{{HAVING}}', '');
+    }
+
     finalQuery = finalQuery.replace(/\{\{ORDER_BY}}/g, '');
     finalQuery = finalQuery.replace(/\{\{LIMIT}}/g, '');
 
@@ -76,8 +90,11 @@ export class PostQueryBuilder {
       status = null,
       dateFrom = null,
       dateTo = null,
+      userId = null,
       limit = null,
-      offset = 0
+      offset = 0,
+      search = null,
+      commentCount = null
     } = options;
 
     const builder = new QueryBuilder(baseQuery);
@@ -94,9 +111,37 @@ export class PostQueryBuilder {
       builder.where('p.status = ?', status);
     }
 
+    if (userId) {
+      builder.where('p.user_id = ?', userId);
+    }
+
+    if (search) {
+      builder.where('(p.title LIKE ? OR p.content LIKE ?)', `%${search}%`, `%${search}%`);
+    }
+
     builder.whereBetween('p.created_at', dateFrom, dateTo);
 
-    const sortColumn = sortBy === 'date' ? 'p.created_at' : 'total_likes';
+    if (commentCount !== null) {
+      builder.having('comment_count = ?', commentCount);
+    }
+
+    let sortColumn;
+    switch (sortBy) {
+      case 'created_at':
+      case 'date':
+        sortColumn = 'p.created_at';
+        break;
+      case 'views':
+        sortColumn = 'p.views';
+        break;
+      case 'comments':
+        sortColumn = 'comment_count';
+        break;
+      case 'likes':
+      default:
+        sortColumn = 'total_likes';
+        break;
+    }
     builder.orderBy(sortColumn, sortOrder);
 
     builder.limit(limit, offset);

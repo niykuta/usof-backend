@@ -32,14 +32,14 @@ A RESTful API for a question and answer platform for professional and enthusiast
 
 ## Technology Stack
 
-- **Runtime**: Node.js
+- **Runtime**: Node.js 18+
 - **Framework**: Express 5
-- **Database**: MySQL 2
-- **Authentication**: JWT with refresh tokens
+- **Database**: MySQL 8.0
+- **Authentication**: Stateless JWT (access + refresh tokens)
 - **Password Hashing**: bcrypt
 - **Validation**: Zod
 - **Email Service**: Resend
-- **Admin Panel**: AdminJS
+- **Admin Panel**: AdminJS with SQL adapter
 - **File Uploads**: Multer
 
 ## Architecture
@@ -158,13 +158,16 @@ npm run db:init
 - `POST /password-reset/:token` - Confirm password reset
 
 ### Users (`/api/users`)
-- `GET /users` - Get all users (admin only)
-- `GET /users/:id` - Get user by ID
+- `GET /users` - Get all users with pagination (admin only)
+- `GET /users/top` - Get top users by rating (limit parameter)
+- `GET /users/:id` - Get user profile by ID
+- `GET /users/:id/posts` - Get user's posts with pagination
+- `GET /users/:id/comments` - Get user's comments with pagination
 - `GET /users/:id/favorites` - Get user's favorite posts
 - `GET /users/:id/subscriptions` - Get user's subscribed posts
 - `POST /users` - Create user (admin only)
-- `PATCH /users/avatar` - Upload user avatar
-- `PATCH /users/:id` - Update user data
+- `PATCH /users/avatar` - Upload user avatar (authenticated)
+- `PATCH /users/:id` - Update user data (requires old password if changing password)
 - `DELETE /users/:id` - Delete user (admin only)
 
 ### Posts (`/api/posts`)
@@ -208,9 +211,18 @@ npm run db:init
 
 ### Admin Panel
 - Access at `http://localhost:3000/admin`
-- Full CRUD operations for all entities
-- User role management
-- Post status management
+- Built with AdminJS and SQL adapter for direct database access
+- Full CRUD operations for all entities:
+  - Users (password hidden, role management)
+  - Posts (content editor, status management)
+  - Comments (content editor, status management)
+  - Categories (description editor)
+  - Post Likes & Comment Likes
+  - Favorites & Subscriptions
+  - Notifications (message editor, read status)
+  - Email Verifications (tokens hidden)
+  - Password Resets (tokens hidden)
+  - Post Images (display order management)
 
 ## Testing
 
@@ -234,31 +246,48 @@ User:
 
 ## Query Parameters
 
-### Posts Filtering
+### Posts Filtering & Pagination
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 10)
-- `sort` - Sort by: rating, date (default: rating)
-- `order` - Order: asc, desc (default: desc)
-- `category` - Filter by category ID
+- `sortBy` - Sort by: rating, date, views (default: rating)
+- `sortOrder` - Order: asc, desc (default: desc)
+- `categories` - Filter by category IDs (comma-separated)
 - `status` - Filter by status: active, inactive
-- `start_date` - Filter from date
-- `end_date` - Filter to date
+- `dateFrom` - Filter posts created after this date (ISO 8601)
+- `dateTo` - Filter posts created before this date (ISO 8601)
+- `commentCount` - Filter by exact comment count (useful for unanswered: 0)
+- `search` - Full-text search in post title and content
 
-Example:
-```
-GET /api/posts?page=1&limit=10&sort=rating&order=desc&category=1&status=active
+Examples:
+```bash
+# Get active posts sorted by rating
+GET /api/posts?page=1&limit=10&sortBy=rating&sortOrder=desc&status=active
+
+# Get unanswered questions (0 comments)
+GET /api/posts?commentCount=0&status=active
+
+# Get posts from last 24 hours
+GET /api/posts?dateFrom=2025-10-24T00:00:00.000Z&status=active
+
+# Search posts by keyword
+GET /api/posts?search=javascript&status=active
+
+# Filter by multiple categories
+GET /api/posts?categories=1,2,3&status=active
 ```
 
 ## Security Features
 
-- JWT-based authentication with access and refresh tokens
-- Password hashing with bcrypt
-- Email verification for new accounts
-- Token-based password reset
-- Role-based access control (user, admin)
-- Input validation with Zod schemas
-- SQL injection prevention via parameterized queries
-- XSS protection through input sanitization
+- **Stateless JWT Authentication**: Access tokens (15min) + refresh tokens (7 days) stored in httpOnly cookies
+- **Password Security**: bcrypt hashing with salt rounds
+- **Email Verification**: Expiring tokens with indexed lookup for performance
+- **Password Reset**: Secure token-based recovery with expiration and cleanup
+- **Role-Based Access Control**: User and admin roles with middleware enforcement
+- **Input Validation**: Zod schemas for request validation
+- **SQL Injection Prevention**: Parameterized queries and prepared statements
+- **XSS Protection**: Input sanitization and secure headers
+- **Database Constraints**: UNIQUE keys prevent duplicate likes, favorites, subscriptions
+- **Cascade Deletes**: Automatic cleanup of related data when users/posts are deleted
 
 ## Error Handling
 
@@ -291,20 +320,33 @@ HTTP status codes:
 
 ### Database Schema
 
-Main entities:
-- **users** - User accounts and profiles
-- **posts** - User-created posts
-- **comments** - Post comments
-- **categories** - Post categories
-- **post_categories** - Many-to-many relationship
-- **post_likes** - Post reactions
-- **comment_likes** - Comment reactions
-- **favorites** - User bookmarked posts
-- **subscriptions** - Post subscriptions
-- **notifications** - User notifications
-- **sessions** - Refresh token storage
-- **password_resets** - Password reset tokens
-- **email_verifications** - Email verification tokens
+All tables include proper indexing for optimal query performance.
+
+**Main Entities:**
+- **users** - User accounts and profiles with role-based access
+- **posts** - User-created posts with categories and status
+- **comments** - Nested commenting system with parent-child relationships
+- **categories** - Post organization by topics
+- **post_categories** - Many-to-many junction table for post categorization
+
+**Interactions:**
+- **post_likes** - Like/dislike reactions on posts with unique constraint
+- **comment_likes** - Like/dislike reactions on comments with unique constraint
+- **favorites** - User bookmarked posts (indexed for fast lookup)
+- **subscriptions** - Post subscriptions for notifications (indexed for fast lookup)
+
+**Notifications & Security:**
+- **notifications** - Real-time activity tracking with read/unread status
+- **password_resets** - Secure token-based password recovery (indexed tokens)
+- **email_verifications** - Email verification with expiring tokens (indexed tokens)
+- **post_images** - Multiple images per post with display ordering
+
+**Database Features:**
+- Foreign keys with CASCADE deletes for data integrity
+- Composite indexes for common query patterns
+- UNIQUE constraints to prevent duplicate entries
+- Automatic timestamps (created_at, updated_at)
+- Optimized indexes on frequently queried fields (tokens, user_id, post_id, expires_at)
 
 ## License
 

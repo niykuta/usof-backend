@@ -13,23 +13,37 @@ export const USER_QUERIES = {
     SET email_verified = TRUE
     WHERE id = ?
   `,
+  UPDATE_RATING: `
+    UPDATE users
+    SET rating = ?
+    WHERE id = ?
+  `,
+  CALCULATE_RATING: `
+    SELECT
+      COALESCE(
+        (SELECT COUNT(*) FROM post_likes pl
+         JOIN posts p ON pl.post_id = p.id
+         WHERE p.user_id = ? AND pl.type = 'like'), 0
+      ) -
+      COALESCE(
+        (SELECT COUNT(*) FROM post_likes pl
+         JOIN posts p ON pl.post_id = p.id
+         WHERE p.user_id = ? AND pl.type = 'dislike'), 0
+      ) +
+      COALESCE(
+        (SELECT COUNT(*) FROM comment_likes cl
+         JOIN comments c ON cl.comment_id = c.id
+         WHERE c.user_id = ? AND cl.type = 'like'), 0
+      ) -
+      COALESCE(
+        (SELECT COUNT(*) FROM comment_likes cl
+         JOIN comments c ON cl.comment_id = c.id
+         WHERE c.user_id = ? AND cl.type = 'dislike'), 0
+      ) as rating
+  `,
   FIND_BY_ID: `SELECT * FROM users WHERE id = ?`,
   FIND_BY_LOGIN: `SELECT * FROM users WHERE login = ?`,
   FIND_BY_EMAIL: `SELECT * FROM users WHERE email = ?`,
-};
-
-export const SESSION_QUERIES = {
-  CREATE: `
-    INSERT INTO sessions (user_id, refresh_token, expires_at)
-    VALUES (?, ?, ?)
-  `,
-  UPDATE: `
-    UPDATE sessions
-    SET refresh_token = ?, expires_at = ?
-    WHERE user_id = ?
-  `,
-  FIND_BY_USER: `SELECT * FROM sessions WHERE user_id = ?`,
-  DELETE_BY_USER: `DELETE FROM sessions WHERE user_id = ?`
 };
 
 export const PASSWORD_RESET_QUERIES = {
@@ -56,17 +70,88 @@ export const POST_QUERIES = {
       p.*,
       u.login as author_login,
       u.full_name as author_name,
-      COUNT(CASE WHEN pl.type = 'like' THEN 1 END) as like_count,
-      COUNT(CASE WHEN pl.type = 'dislike' THEN 1 END) as dislike_count,
-      (COUNT(CASE WHEN pl.type = 'like' THEN 1 END) - COUNT(CASE WHEN pl.type = 'dislike' THEN 1 END)) as total_likes
+      u.profile_picture as author_profile_picture,
+      COUNT(DISTINCT CASE WHEN pl.type = 'like' THEN pl.id END) as like_count,
+      COUNT(DISTINCT CASE WHEN pl.type = 'dislike' THEN pl.id END) as dislike_count,
+      (COUNT(DISTINCT CASE WHEN pl.type = 'like' THEN pl.id END) - COUNT(DISTINCT CASE WHEN pl.type = 'dislike' THEN pl.id END)) as total_likes,
+      COUNT(DISTINCT c.id) as comment_count
     FROM posts p
     LEFT JOIN post_likes pl ON p.id = pl.post_id
     LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN comments c ON p.id = c.post_id
     WHERE 1=1
     {{WHERE}}
     GROUP BY p.id
+    {{HAVING}}
     {{ORDER_BY}}
     {{LIMIT}}
+  `,
+  COUNT_WITH_FILTERS: `
+    SELECT COUNT(*) as total
+    FROM (
+      SELECT p.id, COUNT(DISTINCT c.id) as comment_count
+      FROM posts p
+      LEFT JOIN post_likes pl ON p.id = pl.post_id
+      LEFT JOIN users u ON p.user_id = u.id
+      LEFT JOIN comments c ON p.id = c.post_id
+      WHERE 1=1
+      {{WHERE}}
+      GROUP BY p.id
+      {{HAVING}}
+    ) as filtered_posts
+  `,
+  FIND_BY_ID_WITH_DETAILS: `
+    SELECT p.*,
+           u.login as author_login,
+           u.full_name as author_name,
+           u.rating as author_rating,
+           u.profile_picture as author_profile_picture,
+           COUNT(DISTINCT CASE WHEN pl.type = 'like' THEN pl.id END) as like_count,
+           COUNT(DISTINCT CASE WHEN pl.type = 'dislike' THEN pl.id END) as dislike_count,
+           (COUNT(DISTINCT CASE WHEN pl.type = 'like' THEN pl.id END) - COUNT(DISTINCT CASE WHEN pl.type = 'dislike' THEN pl.id END)) as total_likes,
+           COUNT(DISTINCT c.id) as comment_count
+    FROM posts p
+    LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN post_likes pl ON p.id = pl.post_id
+    LEFT JOIN comments c ON p.id = c.post_id
+    WHERE p.id = ?
+    GROUP BY p.id
+  `,
+  INCREMENT_VIEWS: `
+    UPDATE posts
+    SET views = views + 1
+    WHERE id = ?
+  `
+};
+
+export const POST_IMAGE_QUERIES = {
+  ADD_IMAGES: `
+    INSERT INTO post_images (post_id, image_path, display_order)
+    VALUES ?
+  `,
+  GET_IMAGES: `
+    SELECT id, image_path, display_order
+    FROM post_images
+    WHERE post_id = ?
+    ORDER BY display_order ASC
+  `,
+  DELETE_IMAGE: `
+    DELETE FROM post_images
+    WHERE id = ? AND post_id = ?
+  `,
+  DELETE_IMAGES_BULK: `
+    DELETE FROM post_images
+    WHERE post_id = ? AND id IN (?)
+  `,
+  GET_IMAGE_BY_ID: `
+    SELECT id, post_id, image_path
+    FROM post_images
+    WHERE id = ?
+  `,
+  GET_IMAGES_BY_IDS: `
+    SELECT id, post_id, image_path
+    FROM post_images
+    WHERE post_id = ? AND id IN (?)
   `
 };
 
@@ -111,8 +196,8 @@ export const POST_CATEGORY_QUERIES = {
 
 export const COMMENT_QUERIES = {
   CREATE: `
-    INSERT INTO comments (post_id, user_id, content)
-    VALUES (?, ?, ?)
+    INSERT INTO comments (post_id, user_id, parent_comment_id, content)
+    VALUES (?, ?, ?, ?)
   `,
   UPDATE: `
     UPDATE comments
@@ -125,9 +210,20 @@ export const COMMENT_QUERIES = {
     WHERE id = ?
   `,
   FIND_BY_POST: `
-    SELECT * FROM comments
-    WHERE post_id = ?
-    ORDER BY created_at ASC
+    SELECT c.*,
+           u.login as author_login,
+           u.full_name as author_name,
+           u.rating as author_rating,
+           u.profile_picture as author_profile_picture,
+           COUNT(DISTINCT CASE WHEN cl.type = 'like' THEN cl.id END) as like_count,
+           COUNT(DISTINCT CASE WHEN cl.type = 'dislike' THEN cl.id END) as dislike_count,
+           (COUNT(DISTINCT CASE WHEN cl.type = 'like' THEN cl.id END) - COUNT(DISTINCT CASE WHEN cl.type = 'dislike' THEN cl.id END)) as total_likes
+    FROM comments c
+    LEFT JOIN users u ON c.user_id = u.id
+    LEFT JOIN comment_likes cl ON c.id = cl.comment_id
+    WHERE c.post_id = ?
+    GROUP BY c.id
+    ORDER BY c.created_at ASC
   `
 };
 
@@ -306,13 +402,39 @@ export const FAVORITE_QUERIES = {
   `
 };
 
+export const ACTIVITY_QUERIES = {
+  GET_USER_POSTS: `
+    SELECT id, title, created_at, 'post' as type
+    FROM posts
+    WHERE user_id = ? AND status = 'active'
+  `,
+  GET_USER_COMMENTS: `
+    SELECT c.id, c.content, c.created_at, c.post_id, p.title as post_title, 'comment' as type
+    FROM comments c
+    JOIN posts p ON c.post_id = p.id
+    WHERE c.user_id = ? AND c.status = 'active'
+  `,
+  GET_USER_POST_LIKES: `
+    SELECT pl.id, pl.created_at, pl.type as like_type, pl.post_id, p.title as post_title, 'post_like' as type
+    FROM post_likes pl
+    JOIN posts p ON pl.post_id = p.id
+    WHERE pl.user_id = ?
+  `,
+  GET_USER_COMMENT_LIKES: `
+    SELECT cl.id, cl.created_at, cl.type as like_type, cl.comment_id, c.content as comment_content, c.post_id, p.title as post_title, 'comment_like' as type
+    FROM comment_likes cl
+    JOIN comments c ON cl.comment_id = c.id
+    JOIN posts p ON c.post_id = p.id
+    WHERE cl.user_id = ?
+  `
+};
+
 export const ADMIN_QUERIES = {
   USER_COUNT: `SELECT COUNT(*) as count FROM users`,
   POST_COUNT: `SELECT COUNT(*) as count FROM posts`,
   COMMENT_COUNT: `SELECT COUNT(*) as count FROM comments`,
   CATEGORY_COUNT: `SELECT COUNT(*) as count FROM categories`,
   DELETE_USER_CASCADE: [
-    `DELETE FROM sessions WHERE user_id = ?`,
     `DELETE FROM post_likes WHERE user_id = ?`,
     `DELETE FROM comment_likes WHERE user_id = ?`,
     `DELETE FROM favorites WHERE user_id = ?`,

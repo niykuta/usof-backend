@@ -1,10 +1,9 @@
 import bcrypt from "bcrypt";
-import SessionModel from "#src/models/sessions.model.js";
 import UserModel from "#src/models/user.model.js";
 import ResetModel from "#src/models/reset.model.js";
 import EmailVerificationModel from "#src/models/emailVerification.model.js";
 import { AuthError, ConflictError, ValidationError } from "#src/utils/error.class.js";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "#src/utils/jwt.utils.js";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, setRefreshTokenCookie, clearRefreshTokenCookie } from "#src/utils/jwt.utils.js";
 import { generateResetToken, hashResetToken } from "#src/utils/token.utils.js";
 import { sendPasswordResetEmail, sendEmailVerification } from "#src/utils/email.utils.js";
 
@@ -53,65 +52,37 @@ export async function login(req, res) {
 
   console.log('Login tokens:', { accessToken, refreshToken });
 
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const existingSession = await SessionModel.findByUser(user.id);
-
-  if (existingSession) {
-    await SessionModel.update({ user_id: user.id, refresh_token: refreshToken, expires_at: expiresAt });
-  } else {
-    await SessionModel.create({ user_id: user.id, refresh_token: refreshToken, expires_at: expiresAt });
-  }
+  setRefreshTokenCookie(res, refreshToken);
 
   const { password: _, ...userData } = user;
 
   res.status(200).json({
     message: "Login successful",
     accessToken,
-    refreshToken,
     user: userData,
   });
 }
 
 export async function refresh(req, res) {
-  const { refreshToken } = req.body;
+  const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) throw new AuthError("No refresh token provided");
 
-  let payload;
-  try {
-    payload = verifyRefreshToken(refreshToken);
-  } catch {
-    throw new AuthError("Invalid refresh token");
-  }
+  const payload = verifyRefreshToken(refreshToken);
 
-  const session = await SessionModel.validateToken(payload.id, refreshToken);
-  if (!session) throw new AuthError("Refresh token expired or invalid");
+  const user = await UserModel.find(payload.id);
+  if (!user) throw new AuthError("User not found");
 
-  const newAccessToken = generateAccessToken({ id: payload.id, role: payload.role });
-  const newRefreshToken = generateRefreshToken({ id: payload.id });
+  const newAccessToken = generateAccessToken({ id: user.id, role: user.role });
 
-  console.log('Refreshed tokens:', { accessToken: newAccessToken, refreshToken: newRefreshToken });
-
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  await SessionModel.update({ user_id: payload.id, refresh_token: newRefreshToken, expires_at: expiresAt });
+  console.log('Refreshed access token:', { accessToken: newAccessToken });
 
   res.status(200).json({
-    accessToken: newAccessToken,
-    refreshToken: newRefreshToken,
+    accessToken: newAccessToken
   });
 }
 
 export async function logout(req, res) {
-  const { refreshToken } = req.body;
-  if (!refreshToken) throw new AuthError("No refresh token provided");
-
-  let payload;
-  try {
-    payload = verifyRefreshToken(refreshToken);
-  } catch {
-    throw new AuthError("Invalid refresh token");
-  }
-
-  await SessionModel.deleteByUser(payload.id);
+  clearRefreshTokenCookie(res);
 
   res.status(200).json({
     message: "Logout successful"
@@ -139,10 +110,22 @@ export async function reset(req, res) {
 }
 
 export async function confirm(req, res) {
-  const { token } = req.params;
+  const { confirm_token } = req.params;
   const { newPassword } = req.body;
 
-  const tokenHash = hashResetToken(token);
+  if (!confirm_token) {
+    throw new ValidationError("Reset token is required");
+  }
+
+  if (!newPassword) {
+    throw new ValidationError("New password is required");
+  }
+
+  if (newPassword.length < 8) {
+    throw new ValidationError("Password must be at least 8 characters long");
+  }
+
+  const tokenHash = hashResetToken(confirm_token);
   const resetEntry = await ResetModel.findByToken(tokenHash);
 
   if (!resetEntry) throw new AuthError("Invalid or expired token");

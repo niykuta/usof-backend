@@ -55,10 +55,10 @@ async function initializeDatabase() {
     const sqlFiles = [
       'users.sql',
       'posts.sql',
+      'post_images.sql',
       'categories.sql',
       'comments.sql',
       'likes.sql',
-      'sessions.sql',
       'resets.sql',
       'verifications.sql',
       'favorites.sql',

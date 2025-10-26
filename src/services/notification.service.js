@@ -12,7 +12,7 @@ class NotificationService {
       post_id: postId,
       comment_id: null,
       type: 'post_updated',
-      message: `Post "${postTitle}" was updated by ${updaterName}`
+      message: `Post "${postTitle}" was updated`
     }));
 
     return await NotificationModel.createBulk(notifications);
@@ -30,7 +30,7 @@ class NotificationService {
         post_id: postId,
         comment_id: commentId,
         type: 'comment_added',
-        message: `${commenterName} commented on post "${postTitle}"`
+        message: `New comment on post "${postTitle}"`
       }));
 
     if (notifications.length === 0) return;

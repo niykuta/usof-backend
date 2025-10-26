@@ -68,6 +68,13 @@ class UserModel extends BaseModel {
       await db.execute(query, [id]);
     }
   }
+
+  async updateRating(userId) {
+    const [rows] = await db.execute(USER_QUERIES.CALCULATE_RATING, [userId, userId, userId, userId]);
+    const rating = rows[0]?.rating || 0;
+    await db.execute(USER_QUERIES.UPDATE_RATING, [rating, userId]);
+    return rating;
+  }
 }
 
 export default new UserModel();

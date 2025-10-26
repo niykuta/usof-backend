@@ -408,21 +408,20 @@ Login:
 4. Compare password hash
 5. Generate access token (15min expiry)
 6. Generate refresh token (7 days expiry)
-7. Store refresh token in database
-8. Return both tokens
+7. Store tokens in httpOnly cookies (stateless)
+8. Return user data
 
 Token Refresh:
-1. User submits refresh token
-2. Verify token signature
-3. Check token exists in database
-4. Generate new access token
-5. Optionally rotate refresh token
-6. Return new access token
+1. Client automatically sends refresh token (httpOnly cookie)
+2. Verify token signature and expiration
+3. Generate new access token
+4. Return new access token in httpOnly cookie
+5. No database lookup required (stateless JWT)
 
 Logout:
-1. User submits refresh token
-2. Delete token from database
-3. Return success
+1. Clear httpOnly cookies on client
+2. Return success
+3. Tokens expire naturally (stateless)
 ```
 
 ---
@@ -766,20 +765,24 @@ npm run db:init
 #### favorites
 | Column | Type | Description |
 |--------|------|-------------|
+| id | INT (PK) | Unique identifier |
 | user_id | INT (FK → users) | User who favorited |
 | post_id | INT (FK → posts) | Favorited post |
 | created_at | TIMESTAMP | Favorite date |
 
-**Composite Primary Key**: (user_id, post_id)
+**Unique Constraint**: (user_id, post_id)
+**Indexes**: user_id, post_id
 
 #### subscriptions
 | Column | Type | Description |
 |--------|------|-------------|
+| id | INT (PK) | Unique identifier |
 | user_id | INT (FK → users) | Subscriber |
 | post_id | INT (FK → posts) | Subscribed post |
 | created_at | TIMESTAMP | Subscription date |
 
-**Composite Primary Key**: (user_id, post_id)
+**Unique Constraint**: (user_id, post_id)
+**Indexes**: user_id, post_id
 
 #### notifications
 | Column | Type | Description |
@@ -792,59 +795,108 @@ npm run db:init
 | is_read | BOOLEAN DEFAULT false | Read status |
 | created_at | TIMESTAMP | Notification time |
 
-#### sessions
-| Column | Type | Description |
-|--------|------|-------------|
-| id | INT (PK) | Unique identifier |
-| user_id | INT (FK → users) | Session owner |
-| refresh_token | VARCHAR(500) | JWT refresh token |
-| expires_at | TIMESTAMP | Expiration time |
-| created_at | TIMESTAMP | Session start |
-
 #### password_resets
 | Column | Type | Description |
 |--------|------|-------------|
 | id | INT (PK) | Unique identifier |
 | user_id | INT (FK → users) | User requesting reset |
-| token | VARCHAR(255) UNIQUE | Reset token |
-| expires_at | TIMESTAMP | Token expiration |
+| token | VARCHAR(255) | Reset token (indexed) |
+| expires_at | TIMESTAMP | Token expiration (indexed) |
 | created_at | TIMESTAMP | Request time |
+
+**Indexes**: token, expires_at, user_id
 
 #### email_verifications
 | Column | Type | Description |
 |--------|------|-------------|
 | id | INT (PK) | Unique identifier |
 | user_id | INT (FK → users) | User to verify |
-| token | VARCHAR(255) UNIQUE | Verification token |
-| expires_at | TIMESTAMP | Token expiration |
+| token | VARCHAR(255) | Verification token (indexed) |
+| expires_at | TIMESTAMP | Token expiration (indexed) |
 | created_at | TIMESTAMP | Creation time |
 
-### Indexes
+**Indexes**: token, expires_at, user_id
 
-For optimal query performance:
+#### post_images
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Unique identifier |
+| post_id | INT (FK → posts) | Associated post |
+| image_path | VARCHAR(500) | Image file path |
+| display_order | INT DEFAULT 0 | Sort order |
+| created_at | TIMESTAMP | Upload time |
 
+**Index**: post_id
+
+### Database Optimization
+
+The database schema includes comprehensive indexing for optimal query performance:
+
+**Primary Entity Indexes:**
 ```sql
 -- Users
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_login ON users(login);
+CREATE INDEX idx_email_verified ON users(email_verified);
+CREATE INDEX idx_role ON users(role);
+CREATE INDEX idx_rating ON users(rating DESC);
+CREATE INDEX idx_created_at ON users(created_at);
 
 -- Posts
-CREATE INDEX idx_posts_author ON posts(author_id);
-CREATE INDEX idx_posts_status ON posts(status);
-CREATE INDEX idx_posts_created ON posts(created_at);
+CREATE INDEX idx_user_posts ON posts(user_id);
+CREATE INDEX idx_status_created ON posts(status, created_at);
+CREATE INDEX idx_created_at ON posts(created_at);
 
 -- Comments
-CREATE INDEX idx_comments_post ON comments(post_id);
-CREATE INDEX idx_comments_author ON comments(author_id);
+CREATE INDEX idx_post_comments ON comments(post_id, created_at);
+CREATE INDEX idx_user_comments ON comments(user_id);
+CREATE INDEX idx_status ON comments(status);
+CREATE INDEX idx_parent_comment ON comments(parent_comment_id);
+```
 
--- Likes
-CREATE INDEX idx_post_likes_post ON post_likes(post_id);
-CREATE INDEX idx_comment_likes_comment ON comment_likes(comment_id);
+**Interaction & Relationship Indexes:**
+```sql
+-- Post Likes
+CREATE INDEX idx_post_likes ON post_likes(post_id, type);
+CREATE INDEX idx_user_likes ON post_likes(user_id);
+
+-- Comment Likes
+CREATE INDEX idx_comment_likes ON comment_likes(comment_id, type);
+CREATE INDEX idx_user_comment_likes ON comment_likes(user_id);
+
+-- Favorites
+CREATE INDEX idx_user_favorites ON favorites(user_id);
+CREATE INDEX idx_post_favorites ON favorites(post_id);
+
+-- Subscriptions
+CREATE INDEX idx_user_subscriptions ON subscriptions(user_id);
+CREATE INDEX idx_post_subscribers ON subscriptions(post_id);
 
 -- Notifications
-CREATE INDEX idx_notifications_user ON notifications(user_id);
-CREATE INDEX idx_notifications_unread ON notifications(user_id, is_read);
+CREATE INDEX idx_user_unread ON notifications(user_id, is_read);
+CREATE INDEX idx_created_at ON notifications(created_at);
+
+-- Post Images
+CREATE INDEX idx_post_images ON post_images(post_id);
 ```
+
+**Security & Token Indexes:**
+```sql
+-- Email Verifications
+CREATE INDEX idx_token ON email_verifications(token);
+CREATE INDEX idx_expires_at ON email_verifications(expires_at);
+CREATE INDEX idx_user_id ON email_verifications(user_id);
+
+-- Password Resets
+CREATE INDEX idx_token ON password_resets(token);
+CREATE INDEX idx_expires_at ON password_resets(expires_at);
+CREATE INDEX idx_user_id ON password_resets(user_id);
+```
+
+**Performance Benefits:**
+- Token lookups are instant (indexed)
+- User favorites/subscriptions load fast
+- Post queries filtered by status and date are optimized
+- Comment count aggregation uses composite indexes
+- Expired token cleanup is efficient
 
 ### Database Triggers
 

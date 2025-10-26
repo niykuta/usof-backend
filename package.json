@@ -1,8 +1,8 @@
 {
   "name": "usof-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "USOF Backend API - Express.js REST API with MySQL",
+  "main": "src/server.js",
   "type": "module",
   "imports": {
     "#src/*": "./src/*"
